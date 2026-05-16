@@ -1,0 +1,74 @@
+# ==============================================================================
+# Mobile: flutter analyze + flutter test для buyer и seller.
+# Phase 0 — заглушка (приложений ещё нет, jobs стартуют только когда появятся
+# pubspec.yaml).
+# ==============================================================================
+name: Mobile tests
+
+on:
+  pull_request:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/test-mobile.yml"
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+
+concurrency:
+  group: test-mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  detect-apps:
+    runs-on: ubuntu-latest
+    outputs:
+      buyer-exists: ${{ steps.detect.outputs.buyer }}
+      seller-exists: ${{ steps.detect.outputs.seller }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: detect
+        run: |
+          if [ -f mobile/buyer/pubspec.yaml ]; then echo "buyer=true"  >> "$GITHUB_OUTPUT"; else echo "buyer=false"  >> "$GITHUB_OUTPUT"; fi
+          if [ -f mobile/seller/pubspec.yaml ]; then echo "seller=true" >> "$GITHUB_OUTPUT"; else echo "seller=false" >> "$GITHUB_OUTPUT"; fi
+
+  buyer:
+    needs: detect-apps
+    if: needs.detect-apps.outputs.buyer-exists == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.24.5
+      - name: Pub get
+        working-directory: mobile/buyer
+        run: flutter pub get
+      - name: Analyze
+        working-directory: mobile/buyer
+        run: flutter analyze
+      - name: Test
+        working-directory: mobile/buyer
+        run: flutter test --coverage
+
+  seller:
+    needs: detect-apps
+    if: needs.detect-apps.outputs.seller-exists == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.24.5
+      - name: Pub get
+        working-directory: mobile/seller
+        run: flutter pub get
+      - name: Analyze
+        working-directory: mobile/seller
+        run: flutter analyze
+      - name: Test
+        working-directory: mobile/seller
+        run: flutter test --coverage

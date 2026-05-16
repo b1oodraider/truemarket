@@ -1,0 +1,84 @@
+# ==============================================================================
+# iOS-сборка через self-hosted runner на MacBook M2 (CLAUDE.md 9.2 / 10.2).
+# Подпись и загрузка в TestFlight — через fastlane + match.
+# Phase 0 — заготовка. Активируется когда появятся mobile/buyer и mobile/seller.
+#
+# ВАЖНО (R-01):
+#   self-hosted runner — single point of failure. Если макбук недоступен,
+#   workflow падает. См. документ docs/runbooks/ios-runner-recovery.md
+#   (создаётся в Phase 4).
+# ==============================================================================
+name: Build iOS
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Какое приложение собирать"
+        type: choice
+        required: true
+        options: [buyer, seller]
+        default: buyer
+
+jobs:
+  build-ios:
+    name: Build & TestFlight
+    runs-on: [self-hosted, macos, arm64, ios]
+    strategy:
+      matrix:
+        app:
+          - buyer
+          - seller
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check app exists
+        id: check
+        run: |
+          if [ -f "mobile/${{ matrix.app }}/pubspec.yaml" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::mobile/${{ matrix.app }} не инициализирован, пропуск"
+          fi
+
+      - name: Set up Flutter
+        if: steps.check.outputs.exists == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.24.5
+
+      - name: Pub get
+        if: steps.check.outputs.exists == 'true'
+        working-directory: mobile/${{ matrix.app }}
+        run: flutter pub get
+
+      - name: Pod install
+        if: steps.check.outputs.exists == 'true'
+        working-directory: mobile/${{ matrix.app }}/ios
+        run: pod install --repo-update
+
+      - name: Decrypt Match certificates
+        if: steps.check.outputs.exists == 'true'
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+        working-directory: mobile/${{ matrix.app }}
+        run: bundle exec fastlane match appstore --readonly
+
+      - name: Build IPA
+        if: steps.check.outputs.exists == 'true'
+        working-directory: mobile/${{ matrix.app }}
+        run: flutter build ios --release
+
+      - name: Upload to TestFlight
+        if: steps.check.outputs.exists == 'true'
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+        working-directory: mobile/${{ matrix.app }}
+        run: bundle exec fastlane beta

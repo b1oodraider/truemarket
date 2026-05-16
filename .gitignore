@@ -1,0 +1,99 @@
+# ==================== Java / Maven ====================
+target/
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+# Maven Wrapper (keep .mvn/wrapper/maven-wrapper.properties)
+.mvn/wrapper/maven-wrapper.jar
+
+# ==================== IDE ====================
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ==================== Spring Boot ====================
+spring.log
+HELP.md
+.factorypath
+.apt_generated
+.classpath
+.project
+.settings/
+
+# ==================== Node / Web ====================
+node_modules/
+dist/
+.next/
+.turbo/
+.cache/
+.parcel-cache/
+.npm
+.pnpm-debug.log
+.pnpm-store/
+yarn-error.log
+npm-debug.log*
+
+# ==================== Flutter / Dart ====================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+android/.gradle/
+android/local.properties
+android/app/build/
+*.iml
+
+# ==================== Docker / Compose ====================
+.docker/
+docker-compose.override.yml
+
+# ==================== Env & Secrets ====================
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+*.keystore
+*.jks
+*.mobileprovision
+secrets/
+.secrets/
+
+# ==================== Logs ====================
+logs/
+*.log
+
+# ==================== Coverage / Test reports ====================
+coverage/
+*.lcov
+htmlcov/
+.coverage
+.pytest_cache/
+
+# ==================== OS / Tooling ====================
+.tool-versions.local
+.envrc
+
+# ==================== Build artefacts ====================
+*.tgz
+*.zip
+*.tar.gz

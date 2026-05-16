@@ -1,0 +1,187 @@
+# ==============================================================================
+# TrueMarket — defaults. Не содержит секретов.
+# Все секреты — через переменные окружения (CLAUDE.md 8.1, 13.5).
+# Профили: local (dev), test (CI/Testcontainers), staging, prod.
+# ==============================================================================
+spring:
+  application:
+    name: truemarket-backend
+  profiles:
+    default: local
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+      indent-output: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+  jpa:
+    hibernate:
+      ddl-auto: validate          # схему меняем только через Flyway
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        format_sql: false
+        default_schema: public
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    locations: classpath:db/migration
+    schemas: public
+    create-schemas: true
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/truemarket}
+    username: ${DB_USER:truemarket}
+    password: ${DB_PASSWORD:truemarket}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:20}
+      minimum-idle: ${DB_POOL_MIN:5}
+      connection-timeout: 5000
+      validation-timeout: 3000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 30000
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2s
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 1s
+          max-attempts: 5
+          multiplier: 2.0
+          max-interval: 30s
+        default-requeue-rejected: false   # упавшее сообщение → DLQ, не петля
+
+  servlet:
+    multipart:
+      max-file-size: ${UPLOAD_MAX_FILE_SIZE:10MB}      # CLAUDE.md 13.3
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:50MB}
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+  forward-headers-strategy: framework
+  compression:
+    enabled: true
+    mime-types: application/json,text/html,text/css,application/javascript
+    min-response-size: 2KB
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 20
+    max-connections: 8192
+    accept-count: 100
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# ===== Spring Modulith =====
+# Phase 0: только архитектурная верификация. Event-store включается в Phase 2
+# вместе с зависимостью spring-modulith-starter-jdbc.
+
+# ===== TrueMarket-специфика =====
+truemarket:
+  api:
+    base-path: /api/v1
+  auth:
+    jwt:
+      secret: ${JWT_SECRET:}                         # ОБЯЗАТЕЛЬНО задать в env
+      access-token-ttl: PT15M                        # CLAUDE.md 13.1
+      refresh-token-ttl: P30D
+      issuer: truemarket
+      algorithm: HS512
+    password:
+      argon2:
+        iterations: 3
+        memory-kb: 65536
+        parallelism: 2
+      pwned-check-enabled: ${PWNED_CHECK_ENABLED:true}
+  rate-limit:
+    auth:
+      per-ip-per-minute: 5
+      per-login-per-minute: 5
+    register:
+      per-ip-per-hour: 3
+    api:
+      per-user-per-minute: 100
+  storage:
+    s3:
+      endpoint: ${S3_ENDPOINT:http://localhost:9000}
+      region: ${S3_REGION:ru-central1}
+      access-key: ${S3_ACCESS_KEY:minioadmin}
+      secret-key: ${S3_SECRET_KEY:minioadmin}
+      bucket-products: ${S3_BUCKET_PRODUCTS:truemarket-products}
+      bucket-documents: ${S3_BUCKET_DOCUMENTS:truemarket-documents}
+      path-style-access: true
+  search:
+    meilisearch:
+      url: ${MEILI_URL:http://localhost:7700}
+      api-key: ${MEILI_API_KEY:masterKey}
+      index-products: products
+
+# ===== springdoc / Swagger =====
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+
+# ===== Resilience4j defaults =====
+resilience4j:
+  circuitbreaker:
+    instances:
+      yookassa:
+        slidingWindowSize: 50
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+      meilisearch:
+        slidingWindowSize: 100
+        failureRateThreshold: 60
+        waitDurationInOpenState: 10s
+  retry:
+    instances:
+      yookassa:
+        maxAttempts: 3
+        waitDuration: 1s
+        exponentialBackoffMultiplier: 2
+
+logging:
+  level:
+    root: INFO
+    ru.truemarket: INFO
+    org.springframework.modulith: INFO
+    org.hibernate.SQL: WARN

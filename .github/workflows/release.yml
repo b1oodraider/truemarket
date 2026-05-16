@@ -1,0 +1,105 @@
+# ==============================================================================
+# Релиз в продакшен. Триггер — тег v*. Обязательное ручное подтверждение.
+# Phase 0 — заглушка. Активируется в Phase 5.
+#
+# Требуемые secrets:
+#   KUBE_CONFIG_PROD      — base64-encoded ~/.kube/config продакшен-кластера
+# Требуемое окружение GitHub: "production" с required reviewers.
+# ==============================================================================
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Тег для деплоя (например, v1.2.0)"
+        required: true
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+
+  build-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Build JAR
+        working-directory: backend
+        run: ./mvnw -B -DskipTests package
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}/backend:latest
+
+  deploy-prod:
+    needs: build-image
+    runs-on: ubuntu-latest
+    environment:
+      name: production           # GitHub Environment с required reviewers — manual approval
+      url: https://truemarket.ru
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip if k8s/prod не создан (Phase 0)
+        id: check
+        run: |
+          if [ -d "infra/k8s/prod" ]; then
+            echo "ready=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::infra/k8s/prod/ ещё не создан — деплой в прод недоступен до Phase 5."
+            exit 0
+          fi
+
+      - name: Set up kubectl
+        if: steps.check.outputs.ready == 'true'
+        uses: azure/setup-kubectl@v4
+
+      - name: Deploy to production
+        if: steps.check.outputs.ready == 'true'
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG_PROD }}
+        run: |
+          mkdir -p ~/.kube
+          echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+          kubectl apply -f infra/k8s/prod/
+          kubectl set image deployment/truemarket-backend \
+            backend=ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }} \
+            -n truemarket
+          kubectl rollout status deployment/truemarket-backend -n truemarket --timeout=10m
+
+  create-release:
+    needs: deploy-prod
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          name: TrueMarket ${{ github.ref_name }}

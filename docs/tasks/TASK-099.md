@@ -8,6 +8,13 @@ estimated_hours: 2
 status: in_progress
 started_at: 2026-05-17
 
+residual_resolution: |
+  Trivy после apk-хардинга (и даже с Boot 4 в стеке TASK-098) всё ещё флагует
+  остаточные fixable CRITICAL/HIGH в eclipse-temurin:*-alpine. Решение Product
+  Owner (1.B): ПРИНЯТЬ как non-blocking (security-scan.yml не блокирует PR
+  by design), вынести в backlog TASK-097 (Phase 5). Гейты НЕ ослаблены.
+  OWASP-таймаут — операционное (секрет NVD_API_KEY), см. runbook.
+
 context: |
   При прогоне security-scan.yml на PR #1 (триггер: spotless переформатировал
   backend/pom.xml в TASK-100) обнаружен pre-existing security-долг Phase 0:

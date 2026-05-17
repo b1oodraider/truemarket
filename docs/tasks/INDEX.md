@@ -36,6 +36,13 @@
 | — | [ADR-007](../adr/ADR-007-db-migrations.md): миграции БД | 🟢 DONE |
 | — | [ADR-008](../adr/ADR-008-fiscalization-strategy.md): фискализация 54-ФЗ | 🟢 DONE |
 
+**ADR Phase 1:**
+
+| ID | Название | Статус |
+|---|---|---|
+| — | [ADR-009](../adr/ADR-009-encrypt-sensitive-db-fields.md): шифрование чувствительных полей БД | 🟢 DONE |
+| — | [ADR-010](../adr/ADR-010-platform-upgrade-java25-springboot4.md): платформенный апгрейд Java 25 + Spring Boot 4 | 🟢 ACCEPTED |
+
 ---
 
 ## Phase 1 — Ядро (MVP auth + catalog)
@@ -84,3 +91,10 @@
 ## Phase 5 — Аналитика и мониторинг
 
 (после Чекпоинта 4)
+
+### Backlog (трекинг, не Phase 1)
+
+| ID | Название | Статус | Прим. |
+|---|---|---|---|
+| TASK-097 | Trivy: остаточные fixable CRITICAL/HIGH CVE в base-image `eclipse-temurin:25-jre-alpine` | 🔵 BACKLOG (Phase 5) | Решение PO (1.B): принять как non-blocking (`security-scan.yml` не блокирует PR by design), вернуться в Phase 5 — pin digest без CVE / distroless / обоснованные `.trivyignore` с тикетами. Гейты НЕ ослабляются. |
+| — | OWASP: установить секрет `NVD_API_KEY` (Settings репозитория) | 🔵 OPS | Операционное действие владельца, см. [runbook](../runbooks/security-scan-nvd-api-key.md). Без секрета OWASP-job таймаутит (non-blocking). |

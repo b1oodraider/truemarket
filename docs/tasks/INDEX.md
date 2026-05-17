@@ -56,7 +56,7 @@
 | [TASK-100](./TASK-100.md) | Устранить lint/test-долг Phase 0, блокирующий CI Phase 1 | 🟢 DONE |
 | [TASK-101](./TASK-101.md) | Auth: миграции БД (users, refresh_tokens, user_consents) | 🟢 DONE |
 | [TASK-102](./TASK-102.md) | Auth: регистрация покупателя (argon2id + JWT-выпуск) | 🟢 DONE |
-| TASK-103 | Auth: `/login` + `/refresh` (переиспользует TokenService из 102) | 🔵 TODO |
+| [TASK-103](./TASK-103.md) | Auth: `/login` + `/refresh` (stateless, переиспользует TokenService из 102) | 🟢 DONE |
 | TASK-104 | Auth: персистентная ротация refresh (`auth.refresh_tokens`) + replay-detection | 🔵 TODO |
 | TASK-105 | Auth: breach-check (haveibeenpwned) + смена пароля + политика | 🔵 TODO |
 | TASK-106 | Auth: middleware валидации JWT, RBAC | 🔵 TODO |

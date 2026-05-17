@@ -70,6 +70,23 @@ technical_notes: |
   соответствующей версии + фиксация в ADR-010 (триггер пересмотра) — НЕ
   ослабление тестов/гейтов.
 
+  РЕЗОЛЮЦИЯ РИСКОВ (валидировано локально JDK 26 → release 25,
+  ./mvnw -P integration verify = BUILD SUCCESS):
+  - Testcontainers 2.0: артефакты переименованы — добавлен префикс
+    `testcontainers-` (junit-jupiter → testcontainers-junit-jupiter и т.д.).
+    Исправлены координаты в <dependencies>; BOM-импорт оставлен явным
+    (Spring Boot 4.0.6 хоть и пинит testcontainers.version=2.0.5, но импорт
+    BOM явный — детерминированнее).
+  - Spotless 3.5.1 sortPom нормализует пустые теги <x></x> → <x/>;
+    применён spotless:apply (pom.xml). Java-файлы под gjf 1.27 не менялись.
+  - resilience4j-spring-boot3 2.2.0: РИСК НЕ РЕАЛИЗОВАЛСЯ — резолвится и
+    компилируется под Spring Boot 4, тесты контекста зелёные.
+  - springdoc 3.0.3 / Flyway 12 / jjwt 0.13: ОК (AuthMigrationIT 13/13;
+    springdoc-бин компилируется).
+  - JVM-warning JDK 26 "Mutating final fields will be blocked" —
+    предупреждение библиотек рефлексии, не ошибка; на release 25 / CI JDK 25
+    не блокирует. Отслеживать при будущих апгрейдах.
+
 api_changes: []
 
 db_changes: []

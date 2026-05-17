@@ -1,6 +1,6 @@
 # ADR-010 — Платформенный апгрейд: Java 25 + Spring Boot 4 + Spring Modulith 2
 
-- **Статус:** Proposed
+- **Статус:** Accepted
 - **Дата:** 2026-05-17
 - **Автор:** Tech Lead
 - **Supersedes:** ADR-001 (в части версий: Java 21 → 25, Spring Boot 3 → 4; выбор языка/фреймворка Java+Spring сохраняется)
@@ -135,7 +135,14 @@ Resilience4j: переход на артефакт под Spring Boot 4 (`resili
 
 ## История
 
-- v1 (2026-05-17): **Proposed.** Java 25 + Spring Boot 4.0.6 + Modulith 2.0.6 +
-  сопутствующий апгрейд. Локальная валидация невозможна (в dev-среде нет
-  JDK 25). Условие принятия (→ Accepted) — зелёный CI-прогон TASK-098 на
-  JDK 25 (lint + test-backend + integration). До этого решение не финально.
+- v1 (2026-05-17): Proposed. Java 25 + Spring Boot 4.0.6 + Modulith 2.0.6.
+- v2 (2026-05-17): **Accepted.** Валидировано локально (JDK 26 как toolchain,
+  `maven.compiler.release=25`): `./mvnw -P integration verify` → BUILD SUCCESS
+  (Spotless 3.5.1, ModularityTest 2/2, TrueMarketApplicationTests 1/1,
+  AuthMigrationIT 13/13 на Flyway 12 + Testcontainers 2.0). Найдены и
+  устранены реальные несовместимости (TASK-098): Testcontainers 2.0
+  переименовал артефакты (`testcontainers-*` префикс); Spotless 3.x sortPom
+  нормализует пустые теги. Риск resilience4j-spring-boot3 ↔ Boot 4 НЕ
+  реализовался (резолвится и компилируется). Java 26 в dev — только
+  toolchain; проект и CI таргетят Java 25 LTS (обоснование — LTS-горизонт).
+  CI на JDK 25 — финальная перепроверка (TASK-098 PR #19).

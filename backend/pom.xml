@@ -3,16 +3,16 @@
   <modelVersion>4.0.0</modelVersion>
 
   <!--
-        TrueMarket backend — модульный монолит на Spring Boot 3 + Java 21.
-        Архитектура — Spring Modulith (ADR-006).
-        Версии Spring Boot / Modulith зафиксированы; в первом PR — bump до актуального стабильного 3.x.
+        TrueMarket backend — модульный монолит на Spring Boot 4 + Java 25 LTS.
+        Архитектура — Spring Modulith 2.x (ADR-006). Платформа — ADR-010.
+        Версии зафиксированы ADR-010; изменение major — только новым ADR.
     -->
 
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
     <version>4.0.6</version>
-    <relativePath></relativePath>
+    <relativePath/>
   </parent>
 
   <groupId>ru.truemarket</groupId>
@@ -64,6 +64,10 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <!--
+        Spring Boot 4.0.x НЕ управляет org.testcontainers:* — явный BOM-импорт
+        обязателен (TASK-098: проверено, без него version missing).
+      -->
       <dependency>
         <groupId>org.testcontainers</groupId>
         <artifactId>testcontainers-bom</artifactId>
@@ -215,19 +219,20 @@
       <artifactId>spring-modulith-docs</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Testcontainers 2.0: артефакты получили префикс testcontainers-* (TASK-098). -->
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>postgresql</artifactId>
+      <artifactId>testcontainers-postgresql</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>rabbitmq</artifactId>
+      <artifactId>testcontainers-rabbitmq</artifactId>
       <scope>test</scope>
     </dependency>
     <!--
@@ -261,15 +266,15 @@
               <style>GOOGLE</style>
               <reflowLongStrings>true</reflowLongStrings>
             </googleJavaFormat>
-            <removeUnusedImports></removeUnusedImports>
+            <removeUnusedImports/>
             <importOrder>
               <order>java,javax,jakarta,org,com,ru,</order>
             </importOrder>
-            <trimTrailingWhitespace></trimTrailingWhitespace>
-            <endWithNewline></endWithNewline>
+            <trimTrailingWhitespace/>
+            <endWithNewline/>
           </java>
           <pom>
-            <sortPom></sortPom>
+            <sortPom/>
           </pom>
         </configuration>
         <executions>

@@ -103,8 +103,8 @@ Claude Code работает как **старший инженер-архите
 ## 4. Технологический стек
 
 ### Бэкенд
-- **Язык:** Go ИЛИ Java 21 + Spring Boot 3 — **выбор фиксируется в ADR-001 на первом шаге**
-  - Критерии выбора: производительность под нагрузкой, скорость разработки, экосистема, стоимость найма команды
+- **Язык:** **Java 25 LTS + Spring Boot 4** (ADR-001 выбрал Java+Spring; ADR-010 поднял версии до Java 25 / Spring Boot 4.0.x / Spring Modulith 2.0.x)
+  - Изменение major-версий платформы — только новым ADR (см. ADR-010)
 - **API:** REST + WebSocket (real-time трекинг)
 - **БД:** PostgreSQL (основная), Redis (кэш, сессии, очереди задач)
 - **Поиск:** Elasticsearch ИЛИ Meilisearch — **ADR-002**
@@ -296,7 +296,7 @@ truemarket/
 │   ├── runbooks/              # операционные инструкции для инцидентов
 │   ├── tasks/                 # технические задания (TASK-NNN.md)
 │   └── erd.dbml               # схема БД в формате DBML
-├── backend/                   # Go ИЛИ Java (после ADR-001)
+├── backend/                   # Java 25 + Spring Boot 4 (ADR-001, ADR-010)
 │   ├── cmd/                   # точки входа (Go)
 │   ├── internal/
 │   │   ├── auth/
@@ -899,6 +899,17 @@ definition_of_done:
 
 Задачи TASK-101..TASK-117 — см. [INDEX.md](docs/tasks/INDEX.md).
 
+**Инфраструктурные задачи Phase 1 (сделаны до бизнес-логики):**
+
+| ID | Название | Статус |
+|---|---|---|
+| `TASK-101` | Auth: миграции БД (users, refresh_tokens, user_consents) | 🟡 IN_PROGRESS |
+| `TASK-100` | Фикс lint/test-долга Phase 0 (CI gate'ы) | 🟡 IN_PROGRESS |
+| `TASK-099` | Security-хардинг Docker base-image + runbook NVD_API_KEY | 🟡 IN_PROGRESS |
+| `TASK-098` | Платформенный апгрейд Java 25 + Spring Boot 4 ([ADR-010](docs/adr/ADR-010-platform-upgrade-java25-springboot4.md)) | 🟡 IN_PROGRESS |
+
+**Дополнительный ADR Phase 1:** [ADR-010](docs/adr/ADR-010-platform-upgrade-java25-springboot4.md) — платформенный апгрейд (Accepted; supersedes ADR-001 в части версий, amends ADR-006/007).
+
 ---
 
 ## 18. Контакты и ответственные
@@ -920,6 +931,7 @@ definition_of_done:
 | 1.1 | 2026-05-07 | Добавлены полные описания Фаз 1-5 и шаблон TASK-NNN.md с правилами заполнения |
 | 1.2 | 2026-05-07 | **Phase 0 закрыта.** Раздел 2: 5→6 дифференциаторов; § 5 синхронизирован с ADR-005/006/008. § 5.5 state machine исправлен (`shipped → returned` некорректно — возврат только из `delivered/disputed`). § 5.4 переписан с указанием на полный ERD в /docs/erd.dbml. § 13.4 rate limiting усилен (IP+login, не только IP). Закрыты OQ-001, OQ-002, OQ-003, OQ-005; открыты новые OQ-001b, OQ-006, OQ-007. § 17 — статусы Phase 0 → DONE |
 | 1.3 | 2026-05-07 | § 16: добавлено правило **«TASK-файлы создаются по требованию, не оптом»** — INDEX.md ведёт roadmap, полный TASK-NNN.md пишется в момент начала работы. |
+| 1.4 | 2026-05-17 | **§ 4 / § 6 / § 17 синхронизированы с [ADR-010](docs/adr/ADR-010-platform-upgrade-java25-springboot4.md):** платформа Java 21 + Spring Boot 3 → **Java 25 LTS + Spring Boot 4.0.6 + Spring Modulith 2.0.6** (валидировано локально JDK 26→release 25 и CI на JDK 25). § 17 — добавлены инфраструктурные задачи Phase 1 (TASK-098..101). Изменение major-версий платформы — только новым ADR. |
 
 ---
 

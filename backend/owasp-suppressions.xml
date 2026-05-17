@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    OWASP Dependency Check — suppressions.
+    Сюда добавляются ИЗВЕСТНЫЕ false-positives с обязательным обоснованием
+    и сроком пересмотра. Без обоснования suppression не принимается в PR.
+
+    Шаблон:
+    <suppress until="2026-12-31Z">
+        <notes><![CDATA[
+            False positive: CVE-2024-XXXX касается X, но мы используем Y.
+            Пересмотреть после релиза библиотеки A версии Z.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.example/.*$</packageUrl>
+        <cve>CVE-2024-XXXX</cve>
+    </suppress>
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <!-- Suppressions пока отсутствуют. Добавляйте только с обоснованием. -->
+</suppressions>

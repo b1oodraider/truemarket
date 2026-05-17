@@ -1,0 +1,756 @@
+// =============================================================================
+// TrueMarket — Entity Relationship Diagram
+// Формат: DBML (https://dbml.dbdiagram.io). Визуализация: dbdiagram.io / dbdocs.io.
+//
+// Решения и обоснования:
+//   - Один модуль = одна схема PostgreSQL (ADR-007).
+//   - Все таблицы имеют created_at/updated_at; пользовательские сущности — deleted_at (soft delete, 152-ФЗ).
+//   - commission_log и audit_log — immutable, защищены триггерами (ADR-007).
+//   - FiscalReceipt по требованиям 54-ФЗ + агентская модель (ADR-008).
+//   - MarkCode — резервирование/передача в Честный ЗНАК (CLAUDE.md 5.3.2).
+//
+// Версия: 1.0 (2026-05-07). Phase 0.
+// При изменении схемы — новая Flyway-миграция + обновление этого файла + ADR при необходимости.
+// =============================================================================
+
+Project truemarket {
+  database_type: 'PostgreSQL'
+  Note: 'TrueMarket — B2C маркетплейс. Phase 0 ERD.'
+}
+
+// =========================================================================
+// ENUMS (отражены в Java как @Enumerated(EnumType.STRING))
+// =========================================================================
+
+Enum user_role {
+  buyer
+  seller
+  moderator
+  admin
+}
+
+Enum seller_legal_form {
+  ip        [note: 'Индивидуальный предприниматель']
+  ooo       [note: 'Общество с ограниченной ответственностью']
+  // самозанятые на старте не поддерживаются (OQ-005)
+}
+
+Enum verification_status {
+  pending
+  in_review
+  approved
+  rejected
+}
+
+Enum delivery_tier {
+  verified_local   [note: 'базовая комиссия']
+  trusted          [note: '-1.5%, ЕЧР ≤ 7 дней']
+  national         [note: '-3%, ЕЧР+Урал+Сибирь ≤ 10 дней']
+  all_russia       [note: '-4.5%, все округа включая ДВ']
+}
+
+Enum order_status {
+  created
+  paid
+  confirmed
+  shipped
+  in_transit
+  delivered
+  completed
+  cancelled
+  return_requested
+  returned
+  refunded
+  disputed
+  resolved
+}
+
+Enum payment_status {
+  pending
+  authorized
+  captured     [note: 'эскроу — деньги у платформы']
+  released     [note: 'эскроу разморожен в пользу продавца']
+  refunded
+  failed
+}
+
+Enum payout_status {
+  scheduled
+  processing
+  completed
+  failed
+}
+
+Enum receipt_type {
+  prepayment    [note: '54-ФЗ: при оплате (full_prepayment)']
+  full_payment  [note: '54-ФЗ: при доставке (full_payment)']
+  refund        [note: '54-ФЗ: при возврате (returns)']
+}
+
+Enum vat_rate {
+  none      [note: 'без НДС (УСН, ПСН)']
+  vat_0
+  vat_10
+  vat_20
+}
+
+Enum carrier {
+  cdek
+  russian_post
+  boxberry
+  yandex_delivery
+  pickup           [note: 'самовывоз']
+  other
+}
+
+Enum tracking_event_type {
+  created
+  picked_up
+  in_transit
+  at_destination
+  delivered
+  delivery_failed
+  returned_to_sender
+}
+
+Enum mark_code_status {
+  reserved   [note: 'зарезервирован при создании заказа']
+  shipped    [note: 'передан в Честный ЗНАК при отгрузке']
+  cancelled  [note: 'отменён (заказ отменён)']
+}
+
+Enum dispute_status {
+  open
+  awaiting_seller
+  awaiting_buyer
+  awaiting_platform
+  resolved_for_buyer
+  resolved_for_seller
+}
+
+Enum notification_channel {
+  push
+  email
+  sms
+}
+
+Enum notification_status {
+  pending
+  sent
+  delivered
+  failed
+}
+
+// =========================================================================
+// SCHEMA: auth
+// =========================================================================
+
+Table auth.users {
+  id              uuid          [pk, default: `gen_random_uuid()`]
+  email           citext        [unique, not null]
+  phone           varchar(20)   [unique]
+  password_hash   varchar(255)  [not null, note: 'argon2id, см. CLAUDE.md 13.1']
+  role            user_role     [not null, default: 'buyer']
+  email_verified  boolean       [not null, default: false]
+  phone_verified  boolean       [not null, default: false]
+  last_login_at   timestamptz
+  created_at      timestamptz   [not null, default: `now()`]
+  updated_at      timestamptz   [not null, default: `now()`]
+  deleted_at      timestamptz   [note: 'soft delete для 152-ФЗ "права на удаление"']
+  version         integer       [not null, default: 0]
+
+  indexes {
+    email
+    phone
+    (role, deleted_at)
+  }
+}
+
+Table auth.refresh_tokens {
+  id            uuid          [pk, default: `gen_random_uuid()`]
+  user_id       uuid          [not null, ref: > auth.users.id]
+  token_hash    varchar(255)  [unique, not null, note: 'sha-256 от токена']
+  device_info   text          [note: 'User-Agent + IP + платформа']
+  expires_at    timestamptz   [not null]
+  revoked_at    timestamptz
+  rotated_from  uuid          [ref: > auth.refresh_tokens.id, note: 'предыдущий токен в цепочке ротации']
+  created_at    timestamptz   [not null, default: `now()`]
+
+  indexes {
+    user_id
+    expires_at
+  }
+}
+
+Table auth.user_consents {
+  id            uuid          [pk, default: `gen_random_uuid()`]
+  user_id       uuid          [not null, ref: > auth.users.id]
+  consent_type  varchar(64)   [not null, note: 'pdn-processing, agent-offer, marketing, tracking-share, ...']
+  version       varchar(32)   [not null, note: 'pdn-v1.0, agent-offer-v1, ...']
+  accepted_at   timestamptz   [not null, default: `now()`]
+  accepted_ip   inet          [not null]
+  accepted_ua   text          [note: 'User-Agent']
+  revoked_at    timestamptz
+
+  indexes {
+    (user_id, consent_type)
+    (consent_type, version)
+  }
+
+  Note: '152-ФЗ: согласие версионируется. Любое изменение текста согласия → новая version.'
+}
+
+// =========================================================================
+// SCHEMA: catalog
+// =========================================================================
+
+Table catalog.categories {
+  id                  uuid          [pk, default: `gen_random_uuid()`]
+  parent_id           uuid          [ref: > catalog.categories.id]
+  slug                varchar(128)  [unique, not null]
+  name                varchar(256)  [not null]
+  commission_base     numeric(5,4)  [not null, note: '0.12 = 12% для одежды']
+  requires_marking    boolean       [not null, default: false, note: 'Честный ЗНАК (CLAUDE.md 5.3.2)']
+  sort_order          integer       [not null, default: 0]
+  created_at          timestamptz   [not null, default: `now()`]
+  updated_at          timestamptz   [not null, default: `now()`]
+
+  indexes {
+    parent_id
+    slug
+  }
+}
+
+Table catalog.products {
+  id                uuid          [pk, default: `gen_random_uuid()`]
+  seller_id         uuid          [not null, ref: > verification.sellers.id]
+  category_id       uuid          [not null, ref: > catalog.categories.id]
+  title             varchar(256)  [not null]
+  description       text
+  price_amount      numeric(12,2) [not null, note: 'в рублях с копейками']
+  price_currency    char(3)       [not null, default: 'RUB']
+  stock             integer       [not null, default: 0]
+  requires_marking  boolean       [not null, note: 'денормализация из categories.requires_marking для скорости']
+  gtin              varchar(14)   [note: 'GTIN-14, опционально']
+  status            varchar(32)   [not null, default: 'draft', note: 'draft|published|archived']
+  verified_at       timestamptz   [note: 'CLAUDE.md дифференциатор #2 — верификация фото товара']
+  created_at        timestamptz   [not null, default: `now()`]
+  updated_at        timestamptz   [not null, default: `now()`]
+  deleted_at        timestamptz
+  version           integer       [not null, default: 0]
+
+  indexes {
+    seller_id
+    category_id
+    (status, deleted_at)
+    gtin
+  }
+}
+
+Table catalog.product_images {
+  id          uuid          [pk, default: `gen_random_uuid()`]
+  product_id  uuid          [not null, ref: > catalog.products.id]
+  s3_key      varchar(512)  [not null, note: 'путь в bucket truemarket-products']
+  alt_text    varchar(256)
+  width       integer
+  height      integer
+  size_bytes  integer
+  position    integer       [not null, default: 0]
+  is_primary  boolean       [not null, default: false]
+  created_at  timestamptz   [not null, default: `now()`]
+
+  indexes {
+    (product_id, position)
+  }
+}
+
+Table catalog.mark_codes {
+  id            uuid              [pk, default: `gen_random_uuid()`]
+  product_id    uuid              [not null, ref: > catalog.products.id]
+  data_matrix   varchar(512)      [unique, not null, note: 'Data Matrix код из Честного ЗНАКа']
+  status        mark_code_status  [not null, default: 'reserved']
+  order_item_id uuid              [ref: > orders.order_items.id, note: 'к какому товару в заказе привязан']
+  reserved_at   timestamptz       [not null, default: `now()`]
+  shipped_at    timestamptz
+  cancelled_at  timestamptz
+
+  indexes {
+    product_id
+    status
+    order_item_id
+  }
+
+  Note: 'Резервирование/передача в Честный ЗНАК (CLAUDE.md 5.3.2). При requires_marking=true создание товара без mark_code запрещено.'
+}
+
+// =========================================================================
+// SCHEMA: verification (продавцы, документы)
+// =========================================================================
+
+Table verification.sellers {
+  id                    uuid                  [pk, default: `gen_random_uuid()`]
+  user_id               uuid                  [unique, not null, ref: > auth.users.id]
+  legal_form            seller_legal_form     [not null]
+  legal_name            varchar(512)          [not null, note: 'Полное наименование (для ООО) или ФИО ИП']
+  inn                   varchar(12)           [unique, not null]
+  ogrn                  varchar(15)           [unique, note: 'ОГРН (ООО) или ОГРНИП (ИП)']
+  tax_system            varchar(16)           [not null, note: 'OSN|USN|PSN|ESHN — для 54-ФЗ чека']
+  verification_status   verification_status   [not null, default: 'pending']
+  trust_level           delivery_tier         [not null, default: 'verified_local']
+  bank_account          varchar(32)           [note: 'для выплат, encrypted at rest']
+  bank_bik              varchar(9)
+  contact_email         citext                [not null]
+  contact_phone         varchar(20)
+  legal_address         text                  [note: 'юр. адрес из ЕГРЮЛ/ЕГРИП']
+  agent_offer_consent_id uuid                 [ref: > auth.user_consents.id, note: 'агентский договор-оферта (ADR-008)']
+  created_at            timestamptz           [not null, default: `now()`]
+  updated_at            timestamptz           [not null, default: `now()`]
+  deleted_at            timestamptz
+
+  indexes {
+    user_id
+    inn
+    ogrn
+    verification_status
+  }
+}
+
+Table verification.verification_documents {
+  id          uuid          [pk, default: `gen_random_uuid()`]
+  seller_id   uuid          [not null, ref: > verification.sellers.id]
+  doc_type    varchar(64)   [not null, note: 'egrul_extract, passport, charter, power_of_attorney, ...']
+  s3_key      varchar(512)  [not null, note: 'путь в bucket truemarket-documents (приватный)']
+  uploaded_by uuid          [not null, ref: > auth.users.id]
+  reviewed_by uuid          [ref: > auth.users.id, note: 'moderator/admin']
+  status      verification_status [not null, default: 'pending']
+  reject_reason text
+  uploaded_at timestamptz   [not null, default: `now()`]
+  reviewed_at timestamptz
+
+  indexes {
+    seller_id
+    (status, uploaded_at)
+  }
+}
+
+Table verification.product_verifications {
+  id            uuid          [pk, default: `gen_random_uuid()`]
+  product_id    uuid          [not null, ref: > catalog.products.id]
+  verified_by   uuid          [ref: > auth.users.id, note: 'модератор или null для краудсорсинга']
+  method        varchar(32)   [not null, note: 'manual_sample, crowdsource, ai_check']
+  result        verification_status [not null]
+  comment       text
+  created_at    timestamptz   [not null, default: `now()`]
+
+  indexes {
+    product_id
+    (result, created_at)
+  }
+
+  Note: 'CLAUDE.md дифференциатор #2 — выборочная + краудсорсинг верификация совпадения фото с товаром.'
+}
+
+// =========================================================================
+// SCHEMA: orders
+// =========================================================================
+
+Table orders.addresses {
+  id            uuid          [pk, default: `gen_random_uuid()`]
+  user_id       uuid          [not null, ref: > auth.users.id]
+  recipient     varchar(256)  [not null, note: 'ФИО получателя']
+  phone         varchar(20)   [not null]
+  postal_code   varchar(10)   [not null]
+  country       varchar(2)    [not null, default: 'RU']
+  region        varchar(128)
+  city          varchar(128)  [not null]
+  street        varchar(256)
+  building      varchar(32)
+  apartment     varchar(32)
+  comment       text
+  is_default    boolean       [not null, default: false]
+  created_at    timestamptz   [not null, default: `now()`]
+  deleted_at    timestamptz
+
+  indexes {
+    user_id
+  }
+}
+
+Table orders.carts {
+  id          uuid          [pk, default: `gen_random_uuid()`]
+  buyer_id    uuid          [not null, ref: > auth.users.id]
+  created_at  timestamptz   [not null, default: `now()`]
+  updated_at  timestamptz   [not null, default: `now()`]
+
+  indexes {
+    buyer_id [unique]
+  }
+}
+
+Table orders.cart_items {
+  id          uuid          [pk, default: `gen_random_uuid()`]
+  cart_id     uuid          [not null, ref: > orders.carts.id]
+  product_id  uuid          [not null, ref: > catalog.products.id]
+  qty         integer       [not null]
+  added_at    timestamptz   [not null, default: `now()`]
+
+  indexes {
+    (cart_id, product_id) [unique]
+  }
+}
+
+Table orders.orders {
+  id                  uuid          [pk, default: `gen_random_uuid()`]
+  order_number        varchar(20)   [unique, not null, note: 'человеко-читаемый номер: TM-20260507-0001234']
+  buyer_id            uuid          [not null, ref: > auth.users.id]
+  seller_id           uuid          [not null, ref: > verification.sellers.id]
+  status              order_status  [not null, default: 'created']
+  total_amount        numeric(12,2) [not null]
+  commission_amount   numeric(12,2) [not null, note: 'снапшот на момент создания заказа']
+  shipping_amount     numeric(12,2) [not null, default: 0]
+  delivery_address_id uuid          [not null, ref: > orders.addresses.id]
+  delivery_carrier    carrier       [not null]
+  notes               text
+  created_at          timestamptz   [not null, default: `now()`]
+  updated_at          timestamptz   [not null, default: `now()`]
+  paid_at             timestamptz
+  shipped_at          timestamptz
+  delivered_at        timestamptz
+  completed_at        timestamptz
+  cancelled_at        timestamptz
+  version             integer       [not null, default: 0]
+
+  indexes {
+    buyer_id
+    seller_id
+    (status, created_at)
+    order_number
+  }
+
+  Note: 'Переходы статусов только через OrderService.transitionStatus(). Прямой UPDATE запрещён (CLAUDE.md 5.5).'
+}
+
+Table orders.order_items {
+  id              uuid          [pk, default: `gen_random_uuid()`]
+  order_id        uuid          [not null, ref: > orders.orders.id]
+  product_id      uuid          [not null, ref: > catalog.products.id]
+  qty             integer       [not null]
+  price_snapshot  numeric(12,2) [not null, note: 'цена на момент создания заказа']
+  title_snapshot  varchar(256)  [not null, note: 'название на момент заказа — для истории/чеков']
+  vat_rate        vat_rate      [not null]
+  requires_marking boolean      [not null]
+
+  indexes {
+    order_id
+    product_id
+  }
+}
+
+Table orders.status_transitions {
+  id            uuid          [pk, default: `gen_random_uuid()`]
+  order_id      uuid          [not null, ref: > orders.orders.id]
+  from_status   order_status
+  to_status     order_status  [not null]
+  actor_id      uuid          [ref: > auth.users.id, note: 'null для системных переходов']
+  reason        text
+  created_at    timestamptz   [not null, default: `now()`]
+
+  indexes {
+    order_id
+    created_at
+  }
+
+  Note: 'Audit-log переходов статусов. Append-only.'
+}
+
+// =========================================================================
+// SCHEMA: payments
+// =========================================================================
+
+Table payments.payments {
+  id                uuid            [pk, default: `gen_random_uuid()`]
+  order_id          uuid            [not null, ref: > orders.orders.id]
+  idempotency_key   varchar(64)     [unique, not null, note: 'CLAUDE.md 13.5']
+  amount            numeric(12,2)   [not null]
+  status            payment_status  [not null, default: 'pending']
+  provider          varchar(32)     [not null, default: 'yookassa']
+  provider_payment_id varchar(128)  [note: 'ID платежа у провайдера']
+  payment_method    varchar(32)     [note: 'card, sbp, sbol, ...']
+  failure_reason    text
+  authorized_at     timestamptz
+  captured_at       timestamptz
+  released_at       timestamptz     [note: 'эскроу разморожен в пользу продавца']
+  refunded_at       timestamptz
+  created_at        timestamptz     [not null, default: `now()`]
+  updated_at        timestamptz     [not null, default: `now()`]
+
+  indexes {
+    order_id
+    idempotency_key
+    provider_payment_id
+    (status, created_at)
+  }
+}
+
+Table payments.fiscal_receipts {
+  id                  uuid          [pk, default: `gen_random_uuid()`]
+  payment_id          uuid          [not null, ref: > payments.payments.id]
+  receipt_type        receipt_type  [not null]
+  related_receipt_id  uuid          [ref: > payments.fiscal_receipts.id, note: 'для корректирующего чека']
+  fiscal_document_id  varchar(64)   [note: 'FD ID от ОФД (Атол / ЮKassa.Чеки)']
+  fiscal_drive_id     varchar(64)   [note: 'ФН ID']
+  fiscal_storage_id   varchar(64)   [note: 'ФП ID']
+  total_amount        numeric(12,2) [not null]
+  status              varchar(32)   [not null, default: 'pending', note: 'pending|sent|delivered|failed']
+  receipt_url         varchar(512)  [note: 'ссылка на чек для покупателя']
+  sent_at             timestamptz
+  customer_email      citext
+  customer_phone      varchar(20)
+  created_at          timestamptz   [not null, default: `now()`]
+
+  indexes {
+    payment_id
+    (status, created_at)
+  }
+
+  Note: '54-ФЗ. Создаются два чека: prepayment при paid, full_payment при delivered (ADR-008).'
+}
+
+Table payments.fiscal_receipt_items {
+  id              uuid          [pk, default: `gen_random_uuid()`]
+  receipt_id      uuid          [not null, ref: > payments.fiscal_receipts.id]
+  order_item_id   uuid          [ref: > orders.order_items.id]
+  name            varchar(128)  [not null, note: '54-ФЗ лимит 128 символов']
+  quantity        numeric(8,3)  [not null]
+  amount          numeric(12,2) [not null]
+  vat_rate        vat_rate      [not null]
+  payment_subject varchar(32)   [not null, default: 'commodity']
+  payment_mode    varchar(32)   [not null]
+  supplier_inn    varchar(12)   [note: 'ИНН продавца (агентский чек)']
+  supplier_name   varchar(512)
+}
+
+Table payments.commission_log {
+  id              uuid          [pk, default: `gen_random_uuid()`]
+  order_id        uuid          [not null, ref: > orders.orders.id]
+  base_rate       numeric(5,4)  [not null]
+  level_discount  numeric(5,4)  [not null]
+  extra_bonuses   numeric(5,4)  [not null]
+  total_discount  numeric(5,4)  [not null]
+  final_rate      numeric(5,4)  [not null]
+  bonuses_jsonb   jsonb         [not null, note: 'детализация: russian_made/cert/verified/tier']
+  computed_at     timestamptz   [not null, default: `now()`]
+
+  indexes {
+    order_id
+  }
+
+  Note: 'Immutable audit (ADR-007). REVOKE UPDATE/DELETE + BEFORE-trigger. ADR-004 для формулы.'
+}
+
+Table payments.payouts {
+  id              uuid          [pk, default: `gen_random_uuid()`]
+  seller_id       uuid          [not null, ref: > verification.sellers.id]
+  order_id        uuid          [not null, ref: > orders.orders.id, note: 'выплата привязана к конкретному заказу']
+  gross_amount    numeric(12,2) [not null]
+  commission      numeric(12,2) [not null]
+  net_amount      numeric(12,2) [not null, note: 'gross - commission']
+  status          payout_status [not null, default: 'scheduled']
+  provider_ref    varchar(128)  [note: 'ID выплаты у провайдера']
+  scheduled_for   timestamptz   [not null]
+  processed_at    timestamptz
+  failure_reason  text
+  created_at      timestamptz   [not null, default: `now()`]
+
+  indexes {
+    seller_id
+    order_id
+    (status, scheduled_for)
+  }
+}
+
+Table payments.refunds {
+  id                uuid          [pk, default: `gen_random_uuid()`]
+  payment_id        uuid          [not null, ref: > payments.payments.id]
+  order_id          uuid          [not null, ref: > orders.orders.id]
+  amount            numeric(12,2) [not null]
+  reason            text          [not null]
+  status            payment_status [not null, default: 'pending']
+  initiated_by      uuid          [not null, ref: > auth.users.id]
+  fiscal_receipt_id uuid          [ref: > payments.fiscal_receipts.id, note: 'чек возврата']
+  created_at        timestamptz   [not null, default: `now()`]
+  completed_at      timestamptz
+
+  indexes {
+    payment_id
+    order_id
+  }
+}
+
+// =========================================================================
+// SCHEMA: delivery
+// =========================================================================
+
+Table delivery.deliveries {
+  id                  uuid          [pk, default: `gen_random_uuid()`]
+  order_id            uuid          [unique, not null, ref: > orders.orders.id]
+  carrier             carrier       [not null]
+  tracking_number     varchar(64)
+  carrier_order_id    varchar(128)  [note: 'ID заказа в системе курьера']
+  cost                numeric(12,2)
+  weight_grams        integer
+  estimated_delivery_at timestamptz
+  delivered_at        timestamptz
+  last_polled_at      timestamptz   [note: 'для polling-стратегии (ADR-005)']
+  created_at          timestamptz   [not null, default: `now()`]
+  updated_at          timestamptz   [not null, default: `now()`]
+
+  indexes {
+    tracking_number
+    (carrier, last_polled_at)
+  }
+}
+
+Table delivery.tracking_events {
+  id            uuid                [pk, default: `gen_random_uuid()`]
+  delivery_id   uuid                [not null, ref: > delivery.deliveries.id]
+  event_type    tracking_event_type [not null]
+  carrier_code  varchar(64)         [note: 'оригинальный код события у курьера']
+  location      varchar(256)
+  description   text
+  occurred_at   timestamptz         [not null]
+  received_at   timestamptz         [not null, default: `now()`]
+
+  indexes {
+    delivery_id
+    occurred_at
+  }
+}
+
+// =========================================================================
+// SCHEMA: reviews
+// =========================================================================
+
+Table reviews.reviews {
+  id                  uuid          [pk, default: `gen_random_uuid()`]
+  order_id            uuid          [unique, not null, ref: > orders.orders.id, note: 'один заказ = один отзыв']
+  product_id          uuid          [not null, ref: > catalog.products.id]
+  buyer_id            uuid          [not null, ref: > auth.users.id]
+  rating              smallint      [not null, note: '1..5']
+  text                text
+  verified_purchase   boolean       [not null, default: true, note: 'для TrueMarket — всегда true (нет отзывов без покупки)']
+  hidden              boolean       [not null, default: false, note: 'модерация: скрыт без удаления']
+  hidden_reason       text
+  created_at          timestamptz   [not null, default: `now()`]
+  updated_at          timestamptz   [not null, default: `now()`]
+  deleted_at          timestamptz
+
+  indexes {
+    product_id
+    buyer_id
+    (product_id, hidden, deleted_at)
+  }
+}
+
+Table reviews.review_photos {
+  id          uuid          [pk, default: `gen_random_uuid()`]
+  review_id   uuid          [not null, ref: > reviews.reviews.id]
+  s3_key      varchar(512)  [not null]
+  position    integer       [not null, default: 0]
+  created_at  timestamptz   [not null, default: `now()`]
+
+  indexes {
+    review_id
+  }
+}
+
+Table reviews.review_votes {
+  id          uuid          [pk, default: `gen_random_uuid()`]
+  review_id   uuid          [not null, ref: > reviews.reviews.id]
+  user_id     uuid          [not null, ref: > auth.users.id]
+  vote        smallint      [not null, note: '1 (helpful), -1 (not helpful)']
+  created_at  timestamptz   [not null, default: `now()`]
+
+  indexes {
+    (review_id, user_id) [unique]
+  }
+}
+
+// =========================================================================
+// SCHEMA: admin (модерация, споры, audit)
+// =========================================================================
+
+Table admin.disputes {
+  id              uuid            [pk, default: `gen_random_uuid()`]
+  order_id        uuid            [not null, ref: > orders.orders.id]
+  opened_by       uuid            [not null, ref: > auth.users.id]
+  assigned_to     uuid            [ref: > auth.users.id, note: 'модератор']
+  status          dispute_status  [not null, default: 'open']
+  reason          varchar(128)    [not null, note: 'not_delivered, damaged, fake, wrong_item, ...']
+  description     text
+  resolution      text
+  refund_id       uuid            [ref: > payments.refunds.id]
+  opened_at       timestamptz     [not null, default: `now()`]
+  resolved_at     timestamptz
+
+  indexes {
+    order_id
+    (status, opened_at)
+    assigned_to
+  }
+}
+
+Table admin.audit_log {
+  id          uuid          [pk, default: `gen_random_uuid()`]
+  actor_id    uuid          [ref: > auth.users.id]
+  action      varchar(64)   [not null, note: 'user.delete, seller.approve, product.hide, dispute.resolve, ...']
+  target_type varchar(64)   [not null]
+  target_id   uuid          [not null]
+  payload     jsonb         [note: 'детали действия для compliance']
+  ip_address  inet
+  user_agent  text
+  created_at  timestamptz   [not null, default: `now()`]
+
+  indexes {
+    (target_type, target_id)
+    (action, created_at)
+    actor_id
+  }
+
+  Note: 'Immutable audit (CLAUDE.md 13.5). Триггер запрещает UPDATE/DELETE.'
+}
+
+// =========================================================================
+// SCHEMA: notifications
+// =========================================================================
+
+Table notifications.notification_log {
+  id            uuid                  [pk, default: `gen_random_uuid()`]
+  user_id       uuid                  [not null, ref: > auth.users.id]
+  channel       notification_channel  [not null]
+  template_key  varchar(64)           [not null]
+  status        notification_status   [not null, default: 'pending']
+  payload       jsonb                 [not null, note: 'параметры шаблона']
+  destination   varchar(256)          [note: 'email/phone/push-token']
+  provider_ref  varchar(128)
+  failure_reason text
+  scheduled_for timestamptz           [not null, default: `now()`]
+  sent_at       timestamptz
+  delivered_at  timestamptz
+
+  indexes {
+    user_id
+    (status, scheduled_for)
+    (template_key, sent_at)
+  }
+}
+
+// =========================================================================
+// Что НЕ включено в Phase 0 (будущие миграции):
+//   - SearchIndex (Meilisearch вне БД)
+//   - SellerAnalyticsSnapshot (Phase 5)
+//   - PriceHistory (Phase 3+, при добавлении динамического ценообразования)
+//   - RecommendationsCache (Phase 5+)
+//   - SearchQueryLog (для улучшения релевантности, Phase 5)
+//   - SellerLevelHistory (история изменений trust_level — может понадобиться)
+// =========================================================================

@@ -1,0 +1,78 @@
+# ==============================================================================
+# Android-сборка APK + AAB. Триггер: тег v*.
+# Phase 0 — заготовка. Активируется когда появятся pubspec.yaml в mobile/buyer
+# и mobile/seller (Phase 4).
+# ==============================================================================
+name: Build Android
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Какое приложение собирать"
+        type: choice
+        required: true
+        options: [buyer, seller, both]
+        default: both
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app:
+          - buyer
+          - seller
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip if app не существует
+        id: check
+        run: |
+          if [ -f "mobile/${{ matrix.app }}/pubspec.yaml" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::mobile/${{ matrix.app }} не инициализирован, пропуск"
+          fi
+
+      - name: Set up JDK 17
+        if: steps.check.outputs.exists == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Flutter
+        if: steps.check.outputs.exists == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.24.5
+
+      - name: Pub get
+        if: steps.check.outputs.exists == 'true'
+        working-directory: mobile/${{ matrix.app }}
+        run: flutter pub get
+
+      - name: Build APK
+        if: steps.check.outputs.exists == 'true'
+        working-directory: mobile/${{ matrix.app }}
+        run: flutter build apk --release
+
+      - name: Build App Bundle (AAB)
+        if: steps.check.outputs.exists == 'true'
+        working-directory: mobile/${{ matrix.app }}
+        run: flutter build appbundle --release
+
+      - name: Upload artefacts
+        if: steps.check.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.app }}-android-${{ github.ref_name }}
+          path: |
+            mobile/${{ matrix.app }}/build/app/outputs/flutter-apk/*.apk
+            mobile/${{ matrix.app }}/build/app/outputs/bundle/release/*.aab
+          retention-days: 30

@@ -1,0 +1,5 @@
+java temurin-21.0.5+11.0.LTS
+maven 3.9.9
+nodejs 20.18.1
+pnpm 9.15.0
+flutter 3.24.5-stable

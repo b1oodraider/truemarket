@@ -1,0 +1,23 @@
+# ==============================================================================
+# Профиль тестов (Testcontainers). Все datasource-properties перекрываются
+# в @Testcontainers-классах через @DynamicPropertySource.
+# ==============================================================================
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+truemarket:
+  auth:
+    jwt:
+      secret: test-secret-for-tests-only-do-not-use-anywhere-else-just-for-junit-tests
+    password:
+      pwned-check-enabled: false
+
+logging:
+  level:
+    ru.truemarket: DEBUG
+    org.testcontainers: INFO
+    com.github.dockerjava: WARN

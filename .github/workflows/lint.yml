@@ -1,0 +1,92 @@
+# ==============================================================================
+# Lint всех языков. Падает быстро, экономит CI-минуты.
+# ==============================================================================
+name: Lint
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  backend-lint:
+    name: Backend (Spotless / Google Java Format)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Spotless check
+        working-directory: backend
+        run: ./mvnw -B -q spotless:check
+
+  editorconfig-lint:
+    name: EditorConfig
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: editorconfig-checker
+        uses: editorconfig-checker/action-editorconfig-checker@main
+
+  yaml-lint:
+    name: YAML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ibiqlik/action-yamllint@v3
+        with:
+          config_data: |
+            extends: default
+            rules:
+              line-length: { max: 200, level: warning }
+              comments: { min-spaces-from-content: 1 }
+              comments-indentation: disable
+              document-start: disable
+              truthy: { check-keys: false }
+              # OpenAPI-контракт (docs/api/openapi.yaml) использует идиоматичный
+              # flow-стиль `{ type: string }` — разрешаем 1 пробел внутри скобок.
+              braces: { min-spaces-inside: 0, max-spaces-inside: 1 }
+              brackets: { min-spaces-inside: 0, max-spaces-inside: 1 }
+
+  shell-lint:
+    name: Shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          severity: warning
+          ignore_paths: "backend/mvnw"   # Maven Wrapper — не наш код
+
+  markdown-lint:
+    name: Markdown
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DavidAnson/markdownlint-cli2-action@v17
+        with:
+          globs: |
+            **/*.md
+            !**/node_modules/**
+            !**/target/**
+        continue-on-error: true   # markdown-замечания не блокируют PR
+
+  adr-check:
+    name: ADR structure (обязательные секции)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ADR checker
+        run: ./scripts/check-adr.sh

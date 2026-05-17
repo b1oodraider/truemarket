@@ -1,0 +1,93 @@
+# =============================================================================
+# Dependabot — автоматические PR с обновлениями зависимостей и patches на CVE.
+# Документация: https://docs.github.com/en/code-security/dependabot
+# =============================================================================
+version: 2
+
+updates:
+
+  # ===== Maven (backend) =====
+  - package-ecosystem: "maven"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Moscow"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "backend"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    # Группируем minor/patch обновления в один PR — снижает шум.
+    # Security и major-обновления — отдельными PR.
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+          - "org.springframework:*"
+        update-types:
+          - "minor"
+          - "patch"
+      spring-modulith:
+        patterns:
+          - "org.springframework.modulith:*"
+      testcontainers:
+        patterns:
+          - "org.testcontainers:*"
+      production-minor-patch:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+        exclude-patterns:
+          - "org.springframework*"
+          - "org.testcontainers:*"
+      development-minor-patch:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ===== GitHub Actions =====
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Moscow"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"
+
+  # ===== Docker (backend Dockerfile) =====
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Moscow"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore(docker)"
+
+  # ===== Docker (docker-compose базовые образы) =====
+  # Dependabot НЕ парсит docker-compose.yml напрямую. Этот блок сохранён как
+  # напоминание: для обновлений Postgres/Redis/RabbitMQ/MinIO/Meilisearch
+  # используйте отдельный скрипт или Renovate. Альтернатива — заменить тэги
+  # на :latest и полагаться на pull policy (НЕ рекомендуется для прода).
+  # Когда появится infra/k8s/* — Dependabot подхватит kustomization.yaml.
+
+  # ===== Flutter / Dart (когда появится pubspec.yaml в Phase 4) =====
+  # Dependabot нативно не поддерживает pub. Используйте Renovate или
+  # отдельный CI-таргет с `flutter pub outdated --json`.

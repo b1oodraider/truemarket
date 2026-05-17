@@ -1,0 +1,55 @@
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Apache Maven Wrapper startup script (Unix), упрощённая версия.
+# Если у разработчика нет Maven — скачает его в ~/.m2/wrapper и запустит.
+# Версия Maven и URL дистрибутива — в .mvn/wrapper/maven-wrapper.properties.
+# ----------------------------------------------------------------------------
+set -e
+
+WRAPPER_DIR="$(cd "$(dirname "$0")" && pwd)/.mvn/wrapper"
+PROPERTIES_FILE="$WRAPPER_DIR/maven-wrapper.properties"
+
+if [ ! -f "$PROPERTIES_FILE" ]; then
+  echo "ERROR: $PROPERTIES_FILE not found" >&2
+  exit 1
+fi
+
+# Извлекаем distributionUrl из properties
+DIST_URL=$(grep '^distributionUrl=' "$PROPERTIES_FILE" | cut -d= -f2-)
+if [ -z "$DIST_URL" ]; then
+  echo "ERROR: distributionUrl not set in $PROPERTIES_FILE" >&2
+  exit 1
+fi
+
+# Имя архива и распакованной директории
+DIST_FILE="$(basename "$DIST_URL")"
+DIST_NAME="$(echo "$DIST_FILE" | sed -e 's/-bin\.zip$//' -e 's/\.zip$//' -e 's/\.tar\.gz$//')"
+
+CACHE_DIR="${MAVEN_USER_HOME:-$HOME/.m2}/wrapper/dists/$DIST_NAME"
+MAVEN_HOME="$CACHE_DIR/$DIST_NAME"
+
+if [ ! -d "$MAVEN_HOME" ]; then
+  echo "[mvnw] Maven $DIST_NAME не найден локально, скачиваю..."
+  mkdir -p "$CACHE_DIR"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL -o "$CACHE_DIR/$DIST_FILE" "$DIST_URL"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO "$CACHE_DIR/$DIST_FILE" "$DIST_URL"
+  else
+    echo "ERROR: ни curl, ни wget не найдены — установите один из них" >&2
+    exit 1
+  fi
+  ( cd "$CACHE_DIR" && unzip -q "$DIST_FILE" )
+  rm -f "$CACHE_DIR/$DIST_FILE"
+fi
+
+if [ -z "$JAVA_HOME" ] && command -v java >/dev/null 2>&1; then
+  : # Java на PATH, ок
+elif [ -n "$JAVA_HOME" ]; then
+  PATH="$JAVA_HOME/bin:$PATH"
+else
+  echo "ERROR: JAVA_HOME не задан и java не найдена в PATH" >&2
+  exit 1
+fi
+
+exec "$MAVEN_HOME/bin/mvn" "$@"

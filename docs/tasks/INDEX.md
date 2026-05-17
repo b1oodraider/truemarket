@@ -44,6 +44,7 @@
 
 | ID | Название | Статус |
 |---|---|---|
+| [TASK-099](./TASK-099.md) | Security-хардинг Docker base-image + runbook NVD_API_KEY | 🟡 IN_PROGRESS |
 | [TASK-100](./TASK-100.md) | Устранить lint/test-долг Phase 0, блокирующий CI Phase 1 | 🟡 IN_PROGRESS |
 | [TASK-101](./TASK-101.md) | Auth: миграции БД (users, refresh_tokens, user_consents) | 🟡 IN_PROGRESS |
 | TASK-102 | Auth: регистрация покупателя | 🔵 TODO |

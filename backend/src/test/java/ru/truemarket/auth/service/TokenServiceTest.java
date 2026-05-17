@@ -1,0 +1,85 @@
+package ru.truemarket.auth.service;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+
+import javax.crypto.SecretKey;
+
+import org.junit.jupiter.api.Test;
+
+import ru.truemarket.auth.api.dto.TokenPair;
+import ru.truemarket.auth.config.AuthProperties;
+import ru.truemarket.auth.domain.User;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+
+/** Unit-тесты выпуска JWT (TASK-102). */
+class TokenServiceTest {
+
+  private static final String SECRET =
+      "unit-test-secret-must-be-at-least-64-bytes-long-for-hs512-aaaaaaaaaaaaa";
+
+  private final TokenService tokenService =
+      new TokenService(
+          new AuthProperties(
+              new AuthProperties.Jwt(
+                  SECRET, Duration.ofMinutes(15), Duration.ofDays(30), "truemarket"),
+              new AuthProperties.Password(new AuthProperties.Password.Argon2(2, 16384, 1))));
+
+  @Test
+  void issuedAccessToken_isParseable_withCorrectClaims() {
+    User user = User.newBuyer("a@b.com", null, "$argon2id$h");
+
+    TokenPair pair = tokenService.issueFor(user);
+
+    assertThat(pair.tokenType()).isEqualTo("Bearer");
+    assertThat(pair.expiresIn()).isEqualTo(900);
+    assertThat(pair.accessToken()).isNotBlank();
+    assertThat(pair.refreshToken()).isNotBlank();
+
+    SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    var claims =
+        Jwts.parser().verifyWith(key).build().parseSignedClaims(pair.accessToken()).getPayload();
+
+    assertThat(claims.getSubject()).isEqualTo(user.getId().toString());
+    assertThat(claims.getIssuer()).isEqualTo("truemarket");
+    assertThat(claims.get("role", String.class)).isEqualTo("buyer");
+    assertThat(claims.get("typ", String.class)).isEqualTo("access");
+
+    Instant exp = claims.getExpiration().toInstant();
+    Instant now = Instant.now();
+    assertThat(exp).isAfter(now.plus(Duration.ofMinutes(14)));
+    assertThat(exp).isBefore(now.plus(Duration.ofMinutes(16)));
+  }
+
+  @Test
+  void refreshToken_hasRefreshType_andNoRole() {
+    User user = User.newBuyer("a@b.com", null, "$argon2id$h");
+    TokenPair pair = tokenService.issueFor(user);
+
+    SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    var claims =
+        Jwts.parser().verifyWith(key).build().parseSignedClaims(pair.refreshToken()).getPayload();
+
+    assertThat(claims.get("typ", String.class)).isEqualTo("refresh");
+    assertThat(claims.get("role", String.class)).isNull();
+  }
+
+  @Test
+  void shortSecret_isRejected() {
+    assertThatThrownBy(
+            () ->
+                new TokenService(
+                    new AuthProperties(
+                        new AuthProperties.Jwt(
+                            "too-short", Duration.ofMinutes(15), Duration.ofDays(30), "tm"),
+                        new AuthProperties.Password(
+                            new AuthProperties.Password.Argon2(2, 16384, 1)))))
+        .isInstanceOf(IllegalStateException.class);
+  }
+}

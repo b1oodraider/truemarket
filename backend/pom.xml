@@ -130,6 +130,15 @@
       <artifactId>postgresql</artifactId>
       <scope>runtime</scope>
     </dependency>
+    <!--
+      Spring Boot 4 модуляризовал autoconfigure: Flyway-интеграция (запуск миграций
+      при старте) вынесена в отдельный модуль spring-boot-flyway. Без него миграции
+      НЕ выполняются и Hibernate validate падает (TASK-098/102).
+    -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-flyway</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>

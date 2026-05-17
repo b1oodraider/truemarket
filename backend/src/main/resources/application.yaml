@@ -10,16 +10,19 @@ spring:
     default: local
 
   jackson:
+    # Spring Boot 4 = Jackson 3 (tools.jackson). ISO-8601 для дат и
+    # indent-output=false — дефолты Boot 4 (JavaTimeModule), явно не задаём
+    # (старый ключ serialization.write-dates-as-timestamps в Jackson 3 невалиден).
     default-property-inclusion: non_null
-    serialization:
-      write-dates-as-timestamps: false
-      indent-output: false
     deserialization:
       fail-on-unknown-properties: false
 
   jpa:
     hibernate:
-      ddl-auto: validate          # схему меняем только через Flyway
+      # none: схема — single source of truth Flyway (ADR-007). Hibernate validate
+      # принципиально конфликтует с PG-native типами (citext/inet/user_role/jsonb);
+      # корректность схемы гарантируется миграциями + migration-IT (AuthMigrationIT).
+      ddl-auto: none
     properties:
       hibernate:
         jdbc:

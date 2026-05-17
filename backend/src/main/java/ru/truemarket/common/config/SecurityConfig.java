@@ -2,6 +2,7 @@ package ru.truemarket.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -32,7 +33,10 @@ public class SecurityConfig {
                         "/swagger-ui/**",
                         "/v3/api-docs/**")
                     .permitAll()
-                    // Phase 0: всё остальное закрыто. В Phase 1 здесь появится JWT-валидация.
+                    // Публичные auth-эндпоинты (openapi security: []). TASK-102: регистрация.
+                    .requestMatchers(HttpMethod.POST, "/api/v1/auth/register")
+                    .permitAll()
+                    // Остальное закрыто. JWT-валидация/RBAC — TASK-106.
                     .anyRequest()
                     .denyAll())
         .headers(

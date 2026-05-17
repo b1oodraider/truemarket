@@ -29,7 +29,7 @@
 
     <!-- Spring Modulith / архитектура. 1.2.x — линейка для Spring Boot 3.3.x. -->
     <spring-modulith.version>1.2.5</spring-modulith.version>
-    <flyway.maven.version>10.20.1</flyway.maven.version>
+    <flyway.maven.version>12.6.1</flyway.maven.version>
 
     <!-- Тулинг -->
     <spotless.version>2.43.0</spotless.version>

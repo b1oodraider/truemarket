@@ -14,9 +14,9 @@ import org.springframework.modulith.Modulithic;
  *   <li>ADR-006 — модульный монолит на Spring Modulith
  * </ul>
  *
- * <p>Каждый модуль — пакет {@code ru.truemarket.<module>} с {@code package-info.java},
- * содержащим аннотацию {@code @ApplicationModule}. Контроль границ обеспечивается
- * архитектурным тестом {@code ModularityTest}.
+ * <p>Каждый модуль — пакет {@code ru.truemarket.<module>} с {@code package-info.java}, содержащим
+ * аннотацию {@code @ApplicationModule}. Контроль границ обеспечивается архитектурным тестом {@code
+ * ModularityTest}.
  */
 @SpringBootApplication
 @Modulithic(systemName = "TrueMarket")

@@ -31,8 +31,6 @@ class ModularityTest {
 
   @Test
   void writeDocumentationSnapshots() {
-    new Documenter(modules)
-        .writeModulesAsPlantUml()
-        .writeIndividualModulesAsPlantUml();
+    new Documenter(modules).writeModulesAsPlantUml().writeIndividualModulesAsPlantUml();
   }
 }

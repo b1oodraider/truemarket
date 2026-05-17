@@ -1,422 +1,426 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-    <!--
+  <!--
         TrueMarket backend — модульный монолит на Spring Boot 3 + Java 21.
         Архитектура — Spring Modulith (ADR-006).
         Версии Spring Boot / Modulith зафиксированы; в первом PR — bump до актуального стабильного 3.x.
     -->
 
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>
-        <relativePath/>
-    </parent>
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.3.5</version>
+    <relativePath></relativePath>
+  </parent>
 
-    <groupId>ru.truemarket</groupId>
-    <artifactId>truemarket-backend</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
-    <name>TrueMarket Backend</name>
-    <description>Модульный монолит маркетплейса TrueMarket</description>
+  <groupId>ru.truemarket</groupId>
+  <artifactId>truemarket-backend</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>TrueMarket Backend</name>
+  <description>Модульный монолит маркетплейса TrueMarket</description>
 
-    <properties>
-        <java.version>21</java.version>
-        <maven.compiler.release>21</maven.compiler.release>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+  <properties>
+    <java.version>21</java.version>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <!-- Spring Modulith / архитектура. 1.2.x — линейка для Spring Boot 3.3.x. -->
-        <spring-modulith.version>1.2.5</spring-modulith.version>
-        <flyway.maven.version>10.20.1</flyway.maven.version>
+    <!-- Spring Modulith / архитектура. 1.2.x — линейка для Spring Boot 3.3.x. -->
+    <spring-modulith.version>1.2.5</spring-modulith.version>
+    <flyway.maven.version>10.20.1</flyway.maven.version>
 
-        <!-- Тулинг -->
-        <spotless.version>2.43.0</spotless.version>
-        <jacoco.version>0.8.12</jacoco.version>
-        <owasp-dc.version>11.1.0</owasp-dc.version>
+    <!-- Тулинг -->
+    <spotless.version>2.43.0</spotless.version>
+    <jacoco.version>0.8.12</jacoco.version>
+    <owasp-dc.version>11.1.0</owasp-dc.version>
 
-        <!-- Библиотеки -->
-        <jjwt.version>0.12.6</jjwt.version>
-        <logstash-logback.version>8.0</logstash-logback.version>
-        <resilience4j.version>2.2.0</resilience4j.version>
-        <springdoc.version>2.6.0</springdoc.version>
-        <meilisearch.version>0.14.2</meilisearch.version>
-        <aws-sdk.version>2.28.16</aws-sdk.version>
-        <argon2.version>2.11</argon2.version>
-        <testcontainers.version>1.20.3</testcontainers.version>
+    <!-- Библиотеки -->
+    <jjwt.version>0.12.6</jjwt.version>
+    <logstash-logback.version>8.0</logstash-logback.version>
+    <resilience4j.version>2.2.0</resilience4j.version>
+    <springdoc.version>2.6.0</springdoc.version>
+    <meilisearch.version>0.14.2</meilisearch.version>
+    <aws-sdk.version>2.28.16</aws-sdk.version>
+    <argon2.version>2.11</argon2.version>
+    <testcontainers.version>1.20.3</testcontainers.version>
 
-        <!-- Покрытие — порог из CLAUDE.md 9.2 -->
-        <jacoco.coverage.minimum>0.80</jacoco.coverage.minimum>
+    <!-- Покрытие — порог из CLAUDE.md 9.2 -->
+    <jacoco.coverage.minimum>0.80</jacoco.coverage.minimum>
 
-        <!-- Дефолты для flyway-maven-plugin (локальный docker-compose). В CI/проде задаётся через -D. -->
-        <flyway.url>jdbc:postgresql://localhost:5432/truemarket</flyway.url>
-        <flyway.user>truemarket</flyway.user>
-        <flyway.password>truemarket</flyway.password>
-    </properties>
+    <!-- Дефолты для flyway-maven-plugin (локальный docker-compose). В CI/проде задаётся через -D. -->
+    <flyway.url>jdbc:postgresql://localhost:5432/truemarket</flyway.url>
+    <flyway.user>truemarket</flyway.user>
+    <flyway.password>truemarket</flyway.password>
+  </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.modulith</groupId>
-                <artifactId>spring-modulith-bom</artifactId>
-                <version>${spring-modulith.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-bom</artifactId>
-                <version>${testcontainers.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
+  <dependencyManagement>
     <dependencies>
-        <!-- ===== Spring Boot ядро ===== -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-amqp</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
+      <dependency>
+        <groupId>org.springframework.modulith</groupId>
+        <artifactId>spring-modulith-bom</artifactId>
+        <version>${spring-modulith.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>${testcontainers.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
-        <!--
+  <dependencies>
+    <!-- ===== Spring Boot ядро ===== -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-redis</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-amqp</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-websocket</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <!--
             ===== Spring Modulith (ADR-006) =====
             Phase 0: только core (verify() границ модулей).
             Phase 2: добавятся spring-modulith-starter-jdbc (durable event-store)
             и spring-modulith-events-amqp (externalization в RabbitMQ).
         -->
-        <dependency>
-            <groupId>org.springframework.modulith</groupId>
-            <artifactId>spring-modulith-starter-core</artifactId>
-        </dependency>
+    <dependency>
+      <groupId>org.springframework.modulith</groupId>
+      <artifactId>spring-modulith-starter-core</artifactId>
+    </dependency>
 
-        <!-- ===== БД и миграции (ADR-007) ===== -->
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-database-postgresql</artifactId>
-        </dependency>
+    <!-- ===== БД и миграции (ADR-007) ===== -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+    </dependency>
 
-        <!-- ===== Auth: JWT + Argon2id (CLAUDE.md 13.1) ===== -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>${jjwt.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>${jjwt.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>${jjwt.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>de.mkammerer</groupId>
-            <artifactId>argon2-jvm</artifactId>
-            <version>${argon2.version}</version>
-        </dependency>
+    <!-- ===== Auth: JWT + Argon2id (CLAUDE.md 13.1) ===== -->
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-api</artifactId>
+      <version>${jjwt.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-impl</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-jackson</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>de.mkammerer</groupId>
+      <artifactId>argon2-jvm</artifactId>
+      <version>${argon2.version}</version>
+    </dependency>
 
-        <!-- ===== JSON-логирование (CLAUDE.md 8.1) ===== -->
-        <dependency>
-            <groupId>net.logstash.logback</groupId>
-            <artifactId>logstash-logback-encoder</artifactId>
-            <version>${logstash-logback.version}</version>
-        </dependency>
+    <!-- ===== JSON-логирование (CLAUDE.md 8.1) ===== -->
+    <dependency>
+      <groupId>net.logstash.logback</groupId>
+      <artifactId>logstash-logback-encoder</artifactId>
+      <version>${logstash-logback.version}</version>
+    </dependency>
 
-        <!-- ===== Resilience (rate-limiting, circuit breaker, retry) ===== -->
-        <dependency>
-            <groupId>io.github.resilience4j</groupId>
-            <artifactId>resilience4j-spring-boot3</artifactId>
-            <version>${resilience4j.version}</version>
-        </dependency>
+    <!-- ===== Resilience (rate-limiting, circuit breaker, retry) ===== -->
+    <dependency>
+      <groupId>io.github.resilience4j</groupId>
+      <artifactId>resilience4j-spring-boot3</artifactId>
+      <version>${resilience4j.version}</version>
+    </dependency>
 
-        <!-- ===== OpenAPI / Swagger UI ===== -->
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>${springdoc.version}</version>
-        </dependency>
+    <!-- ===== OpenAPI / Swagger UI ===== -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>${springdoc.version}</version>
+    </dependency>
 
-        <!-- ===== Поиск (ADR-002) ===== -->
-        <dependency>
-            <groupId>com.meilisearch.sdk</groupId>
-            <artifactId>meilisearch-java</artifactId>
-            <version>${meilisearch.version}</version>
-        </dependency>
+    <!-- ===== Поиск (ADR-002) ===== -->
+    <dependency>
+      <groupId>com.meilisearch.sdk</groupId>
+      <artifactId>meilisearch-java</artifactId>
+      <version>${meilisearch.version}</version>
+    </dependency>
 
-        <!-- ===== S3 / MinIO (хранение медиа) ===== -->
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>s3</artifactId>
-            <version>${aws-sdk.version}</version>
-        </dependency>
+    <!-- ===== S3 / MinIO (хранение медиа) ===== -->
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+      <version>${aws-sdk.version}</version>
+    </dependency>
 
-        <!-- ===== Тесты ===== -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.modulith</groupId>
-            <artifactId>spring-modulith-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.modulith</groupId>
-            <artifactId>spring-modulith-docs</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>rabbitmq</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!--
+    <!-- ===== Тесты ===== -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.modulith</groupId>
+      <artifactId>spring-modulith-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.modulith</groupId>
+      <artifactId>spring-modulith-docs</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>rabbitmq</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!--
             Testcontainers для Redis — добавим в Phase 1, когда появятся тесты,
             завязанные на Redis (refresh-tokens, rate-limit). До того — не тянем.
         -->
-    </dependencies>
+  </dependencies>
 
-    <build>
-        <finalName>truemarket-backend</finalName>
-        <plugins>
+  <build>
+    <finalName>truemarket-backend</finalName>
+    <plugins>
 
-            <!-- ===== Spring Boot ===== -->
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>ru.truemarket.TrueMarketApplication</mainClass>
-                </configuration>
-            </plugin>
+      <!-- ===== Spring Boot ===== -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <mainClass>ru.truemarket.TrueMarketApplication</mainClass>
+        </configuration>
+      </plugin>
 
-            <!-- ===== Spotless: Google Java Format (CLAUDE.md 8.3) ===== -->
-            <plugin>
-                <groupId>com.diffplug.spotless</groupId>
-                <artifactId>spotless-maven-plugin</artifactId>
-                <version>${spotless.version}</version>
-                <configuration>
-                    <java>
-                        <googleJavaFormat>
-                            <version>1.23.0</version>
-                            <style>GOOGLE</style>
-                            <reflowLongStrings>true</reflowLongStrings>
-                        </googleJavaFormat>
-                        <removeUnusedImports/>
-                        <importOrder>
-                            <order>java,javax,jakarta,org,com,ru,</order>
-                        </importOrder>
-                        <trimTrailingWhitespace/>
-                        <endWithNewline/>
-                    </java>
-                    <pom>
-                        <sortPom/>
-                    </pom>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>spotless-check</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+      <!-- ===== Spotless: Google Java Format (CLAUDE.md 8.3) ===== -->
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>${spotless.version}</version>
+        <configuration>
+          <java>
+            <googleJavaFormat>
+              <version>1.23.0</version>
+              <style>GOOGLE</style>
+              <reflowLongStrings>true</reflowLongStrings>
+            </googleJavaFormat>
+            <removeUnusedImports></removeUnusedImports>
+            <importOrder>
+              <order>java,javax,jakarta,org,com,ru,</order>
+            </importOrder>
+            <trimTrailingWhitespace></trimTrailingWhitespace>
+            <endWithNewline></endWithNewline>
+          </java>
+          <pom>
+            <sortPom></sortPom>
+          </pom>
+        </configuration>
+        <executions>
+          <execution>
+            <id>spotless-check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>validate</phase>
+          </execution>
+        </executions>
+      </plugin>
 
-            <!--
+      <!--
                 ===== Flyway Maven Plugin =====
                 Позволяет применять миграции без запуска приложения: ./mvnw flyway:migrate.
                 Подключается через -Dflyway.url / -Dflyway.user / -Dflyway.password
                 либо через .env, прокинутый в make-таргете db-migrate.
                 Дефолты — для локального docker-compose.
             -->
-            <plugin>
-                <groupId>org.flywaydb</groupId>
-                <artifactId>flyway-maven-plugin</artifactId>
-                <version>${flyway.maven.version}</version>
-                <configuration>
-                    <url>${flyway.url}</url>
-                    <user>${flyway.user}</user>
-                    <password>${flyway.password}</password>
-                    <locations>
-                        <location>filesystem:src/main/resources/db/migration</location>
-                    </locations>
-                    <schemas>
-                        <schema>public</schema>
-                    </schemas>
-                    <createSchemas>true</createSchemas>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.postgresql</groupId>
-                        <artifactId>postgresql</artifactId>
-                        <version>42.7.4</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.flywaydb</groupId>
-                        <artifactId>flyway-database-postgresql</artifactId>
-                        <version>${flyway.maven.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
+      <plugin>
+        <groupId>org.flywaydb</groupId>
+        <artifactId>flyway-maven-plugin</artifactId>
+        <version>${flyway.maven.version}</version>
+        <configuration>
+          <url>${flyway.url}</url>
+          <user>${flyway.user}</user>
+          <password>${flyway.password}</password>
+          <locations>
+            <location>filesystem:src/main/resources/db/migration</location>
+          </locations>
+          <schemas>
+            <schema>public</schema>
+          </schemas>
+          <createSchemas>true</createSchemas>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.4</version>
+          </dependency>
+          <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+            <version>${flyway.maven.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
 
-            <!-- ===== Surefire: unit-тесты ===== -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>**/*IT.java</exclude>
-                        <exclude>**/*IntegrationTest.java</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
+      <!-- ===== Surefire: unit-тесты ===== -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/*IT.java</exclude>
+            <exclude>**/*IntegrationTest.java</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
 
-            <!-- ===== Failsafe: интеграционные тесты ===== -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <configuration>
-                    <includes>
-                        <include>**/*IT.java</include>
-                        <include>**/*IntegrationTest.java</include>
-                    </includes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+      <!-- ===== Failsafe: интеграционные тесты ===== -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <includes>
+            <include>**/*IT.java</include>
+            <include>**/*IntegrationTest.java</include>
+          </includes>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
 
-            <!-- ===== JaCoCo: покрытие (CLAUDE.md 9.2 — 80% для бизнес-модулей) ===== -->
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${jacoco.version}</version>
-                <executions>
-                    <execution>
-                        <id>prepare-agent</id>
-                        <goals><goal>prepare-agent</goal></goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>verify</phase>
-                        <goals><goal>report</goal></goals>
-                    </execution>
-                    <execution>
-                        <id>check-business-modules</id>
-                        <phase>verify</phase>
-                        <goals><goal>check</goal></goals>
-                        <configuration>
-                            <rules>
-                                <rule>
-                                    <element>PACKAGE</element>
-                                    <includes>
-                                        <include>ru.truemarket.payments.*</include>
-                                        <include>ru.truemarket.orders.*</include>
-                                        <include>ru.truemarket.verification.*</include>
-                                        <include>ru.truemarket.reviews.*</include>
-                                    </includes>
-                                    <limits>
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>${jacoco.coverage.minimum}</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+      <!-- ===== JaCoCo: покрытие (CLAUDE.md 9.2 — 80% для бизнес-модулей) ===== -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <goals>
+              <goal>report</goal>
+            </goals>
+            <phase>verify</phase>
+          </execution>
+          <execution>
+            <id>check-business-modules</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>verify</phase>
+            <configuration>
+              <rules>
+                <rule>
+                  <element>PACKAGE</element>
+                  <includes>
+                    <include>ru.truemarket.payments.*</include>
+                    <include>ru.truemarket.orders.*</include>
+                    <include>ru.truemarket.verification.*</include>
+                    <include>ru.truemarket.reviews.*</include>
+                  </includes>
+                  <limits>
+                    <limit>
+                      <counter>LINE</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>${jacoco.coverage.minimum}</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>integration</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <skipITs>false</skipITs>
+            </configuration>
+          </plugin>
         </plugins>
-    </build>
+      </build>
+    </profile>
 
-    <profiles>
-        <profile>
-            <id>integration</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <skipITs>false</skipITs>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <!--
+    <!--
             ===== Профиль security =====
             Запуск: ./mvnw -P security verify
             Цель: OWASP Dependency Check сканирует все зависимости на CVE
@@ -424,34 +428,34 @@
             Длительный (10-15 минут) — не включён в дефолтный verify.
             Запускается в отдельном workflow по расписанию (см. .github/workflows/security-scan.yml).
         -->
-        <profile>
-            <id>security</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.owasp</groupId>
-                        <artifactId>dependency-check-maven</artifactId>
-                        <version>${owasp-dc.version}</version>
-                        <configuration>
-                            <failBuildOnCVSS>7</failBuildOnCVSS>
-                            <formats>
-                                <format>HTML</format>
-                                <format>SARIF</format>
-                            </formats>
-                            <suppressionFile>owasp-suppressions.xml</suppressionFile>
-                            <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>check</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
+    <profile>
+      <id>security</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.owasp</groupId>
+            <artifactId>dependency-check-maven</artifactId>
+            <version>${owasp-dc.version}</version>
+            <configuration>
+              <failBuildOnCVSS>7</failBuildOnCVSS>
+              <formats>
+                <format>HTML</format>
+                <format>SARIF</format>
+              </formats>
+              <suppressionFile>owasp-suppressions.xml</suppressionFile>
+              <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

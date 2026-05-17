@@ -5,8 +5,9 @@ module: auth
 priority: critical
 depends_on: [TASK-004, TASK-007]
 estimated_hours: 4
-status: in_progress
+status: completed
 started_at: 2026-05-17
+completed_at: 2026-05-17
 
 context: |
   Phase 1 начинается с auth-модуля как критического пути для всего остального.

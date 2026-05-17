@@ -44,7 +44,7 @@
     <meilisearch.version>0.14.2</meilisearch.version>
     <aws-sdk.version>2.28.16</aws-sdk.version>
     <argon2.version>2.11</argon2.version>
-    <testcontainers.version>1.20.3</testcontainers.version>
+    <testcontainers.version>2.0.5</testcontainers.version>
 
     <!-- Покрытие — порог из CLAUDE.md 9.2 -->
     <jacoco.coverage.minimum>0.80</jacoco.coverage.minimum>

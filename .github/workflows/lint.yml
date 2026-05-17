@@ -51,8 +51,13 @@ jobs:
             rules:
               line-length: { max: 200, level: warning }
               comments: { min-spaces-from-content: 1 }
+              comments-indentation: disable
               document-start: disable
               truthy: { check-keys: false }
+              # OpenAPI-контракт (docs/api/openapi.yaml) использует идиоматичный
+              # flow-стиль `{ type: string }` — разрешаем 1 пробел внутри скобок.
+              braces: { min-spaces-inside: 0, max-spaces-inside: 1 }
+              brackets: { min-spaces-inside: 0, max-spaces-inside: 1 }
 
   shell-lint:
     name: Shell

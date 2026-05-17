@@ -4,9 +4,36 @@ phase: 1
 module: common
 priority: critical
 depends_on: []
-estimated_hours: 1
+estimated_hours: 2
 status: in_progress
 started_at: 2026-05-17
+
+scope_note: |
+  Изначально (v1) задача покрывала spotless + smoke-тест (локально make ci-local).
+  После первого прогона GitHub Actions на PR #1 (run 25994005518) обнаружен
+  более широкий долг Phase 0 ТОГО ЖЕ КЛАССА — Phase 0 не проходил собственные
+  CI-gate'ы на runner'е Linux:
+
+    3. backend/mvnw и scripts/check-adr.sh закоммичены в Phase 0 БЕЗ
+       executable-бита (Windows-коммит, git mode 100644). На Linux-runner
+       `./mvnw` и `./scripts/check-adr.sh` → exit 126 (Permission denied).
+       Блокировало 5 job'ов: Spotless, Unit, ADR, OWASP, Trivy.
+       Фикс: git update-index --chmod=+x (mode → 100755).
+
+    4. docs/api/openapi.yaml (TASK-008) использует идиоматичный OpenAPI
+       flow-стиль `{ type: string }` (1 пробел внутри скобок). yamllint
+       (extends: default) имеет braces.max-spaces-inside: 0 → ~22 ошибки.
+       Фикс: ослабить правило braces/brackets до max-spaces-inside: 1 в
+       config_data lint.yml + comments-indentation: disable (dependabot.yml).
+       Альтернатива «переформатировать 1043-строчный контракт» отклонена:
+       высокий риск для API-контракта, anti-idiomatic для OpenAPI.
+
+    5. scripts/check-adr.sh:71 — ShellCheck SC2010 (ls | grep).
+       Фикс: glob-цикл вместо `ls`, grep по basename (не по выводу ls).
+
+  Всё это — один класс «Phase 0 не проходит свой CI», вариант A одобрен
+  Product Owner. Расширение scope TASK-100 обоснованно: дробить идентичный
+  по природе долг на 4 микро-PR — оверинжиниринг (CLAUDE.md §16 дух правила).
 
 context: |
   При прогоне make ci-local в рамках TASK-101 обнаружено, что код Phase 0
@@ -83,6 +110,10 @@ definition_of_done:
   - "☑ ./mvnw spotless:check — BUILD SUCCESS"
   - "☑ ./mvnw -P integration verify — BUILD SUCCESS (surefire 3/3, failsafe 13/13, jacoco OK)"
   - "☑ Дифф — только формат + 1 ассерт-список; нет изменений поведения/схемы"
+  - "☑ backend/mvnw + scripts/check-adr.sh имеют git mode 100755"
+  - "☑ scripts/check-adr.sh проходит ShellCheck -S warning (SC2010 устранён) и работает"
+  - "☑ yamllint (config из lint.yml) чист на openapi.yaml/dependabot.yml"
+  - "☑ Все 14 проверок GitHub Actions на PR #1 зелёные (или skipping по условию)"
   - "☑ INDEX.md: TASK-100 → 🟢 DONE"
-  - "☑ Коммит изолирован (chore/style), отделён от TASK-101"
+  - "☑ Коммит изолирован (chore), отделён от TASK-101"
   - "☑ Нет TODO без тикета"

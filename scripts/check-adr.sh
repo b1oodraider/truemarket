@@ -68,8 +68,11 @@ done
 # ----- 4. Нумерация без пропусков и дублей -----
 echo ""
 echo "→ Проверка нумерации"
-numbers=$(ls "$ADR_DIR"/ADR-*.md 2>/dev/null \
-    | grep -oE 'ADR-[0-9]+' | sed 's/ADR-//' | sort -n | uniq -c | awk '{print $1,$2}')
+numbers=$(
+    for f in "$ADR_DIR"/ADR-*.md; do
+        [ -e "$f" ] || continue
+        basename "$f"
+    done | grep -oE 'ADR-[0-9]+' | sed 's/ADR-//' | sort -n | uniq -c | awk '{print $1,$2}')
 
 duplicates=$(echo "$numbers" | awk '$1>1{print $2}')
 if [ -n "$duplicates" ]; then

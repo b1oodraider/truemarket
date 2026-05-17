@@ -44,6 +44,7 @@
 
 | ID | Название | Статус |
 |---|---|---|
+| [TASK-098](./TASK-098.md) | Платформенный апгрейд Java 25 + Spring Boot 4 + Modulith 2 (ADR-010) | 🟡 IN_PROGRESS |
 | [TASK-099](./TASK-099.md) | Security-хардинг Docker base-image + runbook NVD_API_KEY | 🟡 IN_PROGRESS |
 | [TASK-100](./TASK-100.md) | Устранить lint/test-долг Phase 0, блокирующий CI Phase 1 | 🟡 IN_PROGRESS |
 | [TASK-101](./TASK-101.md) | Auth: миграции БД (users, refresh_tokens, user_consents) | 🟡 IN_PROGRESS |

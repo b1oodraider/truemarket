@@ -14,7 +14,7 @@
 # ==============================================================================
 
 # ===== Stage 1: build =====
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM eclipse-temurin:25-jdk-alpine AS builder
 
 # Security-патчи ОС-пакетов на момент сборки (TASK-099).
 RUN apk -U upgrade --no-cache
@@ -37,7 +37,7 @@ RUN ./mvnw -B -ntp -DskipTests package && \
     java -Djarmode=layertools -jar target/truemarket-backend.jar extract --destination target/extracted
 
 # ===== Stage 2: runtime =====
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 # Security-патчи ОС-пакетов в runtime-слое (TASK-099).
 # Именно этот слой сканирует Trivy — здесь устранение fixable HIGH/CRITICAL.

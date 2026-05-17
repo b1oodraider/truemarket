@@ -55,12 +55,15 @@
 | [TASK-099](./TASK-099.md) | Security-хардинг Docker base-image + runbook NVD_API_KEY | 🟢 DONE |
 | [TASK-100](./TASK-100.md) | Устранить lint/test-долг Phase 0, блокирующий CI Phase 1 | 🟢 DONE |
 | [TASK-101](./TASK-101.md) | Auth: миграции БД (users, refresh_tokens, user_consents) | 🟢 DONE |
-| TASK-102 | Auth: регистрация покупателя | 🔵 TODO |
-| TASK-103 | Auth: логин + JWT (access/refresh) | 🔵 TODO |
-| TASK-104 | Auth: ротация refresh-токенов | 🔵 TODO |
-| TASK-105 | Auth: пароли — argon2id + haveibeenpwned check | 🔵 TODO |
+| [TASK-102](./TASK-102.md) | Auth: регистрация покупателя (argon2id + JWT-выпуск) | 🟢 DONE |
+| TASK-103 | Auth: `/login` + `/refresh` (переиспользует TokenService из 102) | 🔵 TODO |
+| TASK-104 | Auth: персистентная ротация refresh (`auth.refresh_tokens`) + replay-detection | 🔵 TODO |
+| TASK-105 | Auth: breach-check (haveibeenpwned) + смена пароля + политика | 🔵 TODO |
 | TASK-106 | Auth: middleware валидации JWT, RBAC | 🔵 TODO |
-| TASK-107 | Auth: rate-limit на login/register | 🔵 TODO |
+| TASK-107 | Auth: rate-limit/429 на `/login` + `/register` | 🔵 TODO |
+
+> Пере-скоуп TASK-103/104/105/107 одобрен PO (2026-05-18): минимум argon2id+JWT
+> уже сделан в TASK-102 под контракт openapi; см. TASK-102.md `context`.
 | TASK-108 | Catalog: миграции (categories, products, product_images) | 🔵 TODO |
 | TASK-109 | Catalog: CRUD категорий (admin) | 🔵 TODO |
 | TASK-110 | Catalog: CRUD товаров (seller) | 🔵 TODO |
@@ -96,5 +99,5 @@
 
 | ID | Название | Статус | Прим. |
 |---|---|---|---|
-| TASK-097 | Trivy: остаточные fixable CRITICAL/HIGH CVE в base-image `eclipse-temurin:25-jre-alpine` | 🔵 BACKLOG (Phase 5) | Решение PO (1.B): принять как non-blocking (`security-scan.yml` не блокирует PR by design), вернуться в Phase 5 — pin digest без CVE / distroless / обоснованные `.trivyignore` с тикетами. Гейты НЕ ослабляются. |
-| — | OWASP: установить секрет `NVD_API_KEY` (Settings репозитория) | 🔵 OPS | Операционное действие владельца, см. [runbook](../runbooks/security-scan-nvd-api-key.md). Без секрета OWASP-job таймаутит (non-blocking). |
+| TASK-097 | Security-scan долг Phase 5: (а) Trivy — остаточные fixable CRITICAL/HIGH CVE в base-image `eclipse-temurin:25-jre-alpine`; (б) OWASP — fast-fail на стеке Boot 4 (генерация SARIF/конфиг плагина после ADR-010) | 🔵 BACKLOG (Phase 5) | Решение PO (1.B): принять как non-blocking (`security-scan.yml` не блокирует PR by design). NVD_API_KEY установлен — 30-мин таймаут устранён (rerun ~1мин); остаточный OWASP fast-fail и Trivy CVE — в Phase 5: pin digest/distroless, разбор OWASP-плагина на Boot 4, обоснованные suppressions с тикетами. Гейты НЕ ослабляются. |
+| — | OWASP `NVD_API_KEY` секрет | 🟢 DONE | Установлен владельцем; таймаут устранён (см. [runbook](../runbooks/security-scan-nvd-api-key.md)). |

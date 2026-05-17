@@ -5,8 +5,9 @@ module: auth
 priority: critical
 depends_on: [TASK-101]
 estimated_hours: 10
-status: in_progress
+status: completed
 started_at: 2026-05-17
+completed_at: 2026-05-18
 
 context: |
   Первая бизнес-фича Phase 1 на новом стеке (Java 25 + Spring Boot 4 + Modulith 2,

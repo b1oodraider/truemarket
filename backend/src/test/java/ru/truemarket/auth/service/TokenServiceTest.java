@@ -71,6 +71,29 @@ class TokenServiceTest {
   }
 
   @Test
+  void parseRefresh_validRefresh_returnsUserId() {
+    User user = User.newBuyer("a@b.com", null, "$argon2id$h");
+    TokenPair pair = tokenService.issueFor(user);
+
+    assertThat(tokenService.parseRefresh(pair.refreshToken())).isEqualTo(user.getId());
+  }
+
+  @Test
+  void parseRefresh_accessToken_rejected() {
+    User user = User.newBuyer("a@b.com", null, "$argon2id$h");
+    TokenPair pair = tokenService.issueFor(user);
+
+    assertThatThrownBy(() -> tokenService.parseRefresh(pair.accessToken()))
+        .isInstanceOf(InvalidTokenException.class);
+  }
+
+  @Test
+  void parseRefresh_garbage_rejected() {
+    assertThatThrownBy(() -> tokenService.parseRefresh("not.a.jwt"))
+        .isInstanceOf(InvalidTokenException.class);
+  }
+
+  @Test
   void shortSecret_isRejected() {
     assertThatThrownBy(
             () ->

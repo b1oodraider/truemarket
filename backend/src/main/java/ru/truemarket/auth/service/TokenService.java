@@ -14,6 +14,7 @@ import ru.truemarket.auth.api.dto.TokenPair;
 import ru.truemarket.auth.config.AuthProperties;
 import ru.truemarket.auth.domain.User;
 
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
@@ -54,6 +55,26 @@ public class TokenService {
     String access = build(user, now, accessTtl, TYPE_ACCESS, true);
     String refresh = build(user, now, refreshTtl, TYPE_REFRESH, false);
     return TokenPair.bearer(access, refresh, accessTtl.toSeconds());
+  }
+
+  /**
+   * Валидирует refresh-токен (подпись, exp, claim typ=refresh) и возвращает userId. Любая
+   * невалидность → {@link InvalidTokenException} (TASK-103). Персистентная ротация/replay-detection
+   * — TASK-104.
+   */
+  public UUID parseRefresh(String refreshToken) {
+    try {
+      var claims =
+          Jwts.parser().verifyWith(key).build().parseSignedClaims(refreshToken).getPayload();
+      if (!TYPE_REFRESH.equals(claims.get(CLAIM_TYPE, String.class))) {
+        throw new InvalidTokenException("not a refresh token");
+      }
+      return UUID.fromString(claims.getSubject());
+    } catch (InvalidTokenException e) {
+      throw e;
+    } catch (JwtException | IllegalArgumentException e) {
+      throw new InvalidTokenException("invalid refresh token");
+    }
   }
 
   private String build(User user, Instant now, Duration ttl, String type, boolean withRole) {

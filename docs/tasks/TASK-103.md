@@ -5,8 +5,9 @@ module: auth
 priority: critical
 depends_on: [TASK-102]
 estimated_hours: 6
-status: in_progress
+status: completed
 started_at: 2026-05-18
+completed_at: 2026-05-18
 
 context: |
   Пере-скоуп одобрен PO (2026-05-18, см. TASK-102.md). TASK-102 заложил

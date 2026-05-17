@@ -28,7 +28,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <!-- Spring Modulith / архитектура. 1.2.x — линейка для Spring Boot 3.3.x. -->
-    <spring-modulith.version>1.2.5</spring-modulith.version>
+    <spring-modulith.version>2.0.6</spring-modulith.version>
     <flyway.maven.version>10.20.1</flyway.maven.version>
 
     <!-- Тулинг -->

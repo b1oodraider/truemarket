@@ -27,7 +27,7 @@ jobs:
       buyer-exists: ${{ steps.detect.outputs.buyer }}
       seller-exists: ${{ steps.detect.outputs.seller }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - id: detect
         run: |
           if [ -f mobile/buyer/pubspec.yaml ]; then echo "buyer=true"  >> "$GITHUB_OUTPUT"; else echo "buyer=false"  >> "$GITHUB_OUTPUT"; fi
@@ -38,7 +38,7 @@ jobs:
     if: needs.detect-apps.outputs.buyer-exists == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -58,7 +58,7 @@ jobs:
     if: needs.detect-apps.outputs.seller-exists == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: subosito/flutter-action@v2
         with:
           channel: stable

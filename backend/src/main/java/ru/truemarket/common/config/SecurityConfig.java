@@ -33,8 +33,13 @@ public class SecurityConfig {
                         "/swagger-ui/**",
                         "/v3/api-docs/**")
                     .permitAll()
-                    // Публичные auth-эндпоинты (openapi security: []). TASK-102: регистрация.
-                    .requestMatchers(HttpMethod.POST, "/api/v1/auth/register")
+                    // Публичные auth-эндпоинты (openapi security: []).
+                    // TASK-102: register; TASK-103: login, refresh.
+                    .requestMatchers(
+                        HttpMethod.POST,
+                        "/api/v1/auth/register",
+                        "/api/v1/auth/login",
+                        "/api/v1/auth/refresh")
                     .permitAll()
                     // Остальное закрыто. JWT-валидация/RBAC — TASK-106.
                     .anyRequest()

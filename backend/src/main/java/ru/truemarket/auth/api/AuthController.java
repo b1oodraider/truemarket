@@ -10,8 +10,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import ru.truemarket.auth.api.dto.LoginRequest;
+import ru.truemarket.auth.api.dto.RefreshRequest;
 import ru.truemarket.auth.api.dto.RegisterRequest;
 import ru.truemarket.auth.api.dto.TokenPair;
+import ru.truemarket.auth.service.AuthenticationService;
 import ru.truemarket.auth.service.RegistrationService;
 
 /**
@@ -24,9 +27,12 @@ import ru.truemarket.auth.service.RegistrationService;
 public class AuthController {
 
   private final RegistrationService registrationService;
+  private final AuthenticationService authenticationService;
 
-  public AuthController(RegistrationService registrationService) {
+  public AuthController(
+      RegistrationService registrationService, AuthenticationService authenticationService) {
     this.registrationService = registrationService;
+    this.authenticationService = authenticationService;
   }
 
   @PostMapping("/register")
@@ -35,6 +41,16 @@ public class AuthController {
     TokenPair tokens =
         registrationService.register(request, clientIp(http), http.getHeader("User-Agent"));
     return ResponseEntity.status(HttpStatus.CREATED).body(tokens);
+  }
+
+  @PostMapping("/login")
+  public TokenPair login(@Valid @RequestBody LoginRequest request) {
+    return authenticationService.login(request.email(), request.password());
+  }
+
+  @PostMapping("/refresh")
+  public TokenPair refresh(@Valid @RequestBody RefreshRequest request) {
+    return authenticationService.refresh(request.refreshToken());
   }
 
   /** Реальный IP за reverse-proxy (server.forward-headers-strategy=framework уже учитывает XFF). */

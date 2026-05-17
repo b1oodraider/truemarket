@@ -80,6 +80,11 @@ public class User {
     return new User(UUID.randomUUID(), email, phone, passwordHash, UserRole.buyer);
   }
 
+  /** Отметить успешный вход (TASK-103). Вызывается в @Transactional-сервисе. */
+  public void touchLastLogin() {
+    this.lastLoginAt = Instant.now();
+  }
+
   public UUID getId() {
     return id;
   }

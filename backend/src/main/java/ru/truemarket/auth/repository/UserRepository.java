@@ -1,5 +1,6 @@
 package ru.truemarket.auth.repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,4 +16,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   boolean existsByEmail(String email);
 
   boolean existsByPhone(String phone);
+
+  /** Логин только активных (не soft-deleted, 152-ФЗ) пользователей (TASK-103). */
+  Optional<User> findByEmailAndDeletedAtIsNull(String email);
+
+  Optional<User> findByIdAndDeletedAtIsNull(UUID id);
 }

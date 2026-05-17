@@ -11,6 +11,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import ru.truemarket.auth.service.InvalidCredentialsException;
+import ru.truemarket.auth.service.InvalidTokenException;
 import ru.truemarket.auth.service.RegistrationConflictException;
 
 /**
@@ -41,6 +43,12 @@ class AuthExceptionHandler {
   @ExceptionHandler(DataIntegrityViolationException.class)
   ProblemDetail onDataIntegrity(DataIntegrityViolationException ex) {
     return problem(HttpStatus.CONFLICT, "Conflict", "unique constraint violation", "conflict");
+  }
+
+  @ExceptionHandler({InvalidCredentialsException.class, InvalidTokenException.class})
+  ProblemDetail onUnauthorized(RuntimeException ex) {
+    // Единое сообщение (anti-enumeration): не раскрываем причину 401 (TASK-103).
+    return problem(HttpStatus.UNAUTHORIZED, "Unauthorized", "invalid credentials", "unauthorized");
   }
 
   private static ProblemDetail problem(

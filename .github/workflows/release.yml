@@ -29,7 +29,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -61,7 +61,7 @@ jobs:
       name: production           # GitHub Environment с required reviewers — manual approval
       url: https://truemarket.ru
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Skip if k8s/prod не создан (Phase 0)
         id: check
@@ -97,7 +97,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:

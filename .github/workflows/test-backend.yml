@@ -24,7 +24,7 @@ jobs:
     name: Unit + Architecture (Spring Modulith)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: unit-and-architecture
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: unit-and-architecture
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4

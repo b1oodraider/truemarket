@@ -44,7 +44,7 @@
 
 | ID | Название | Статус |
 |---|---|---|
-| TASK-101 | Auth: миграции БД (users, refresh_tokens, user_consents) | 🔵 TODO |
+| [TASK-101](./TASK-101.md) | Auth: миграции БД (users, refresh_tokens, user_consents) | 🟡 IN_PROGRESS |
 | TASK-102 | Auth: регистрация покупателя | 🔵 TODO |
 | TASK-103 | Auth: логин + JWT (access/refresh) | 🔵 TODO |
 | TASK-104 | Auth: ротация refresh-токенов | 🔵 TODO |

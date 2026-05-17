@@ -40,7 +40,7 @@
     <jjwt.version>0.12.6</jjwt.version>
     <logstash-logback.version>8.0</logstash-logback.version>
     <resilience4j.version>2.2.0</resilience4j.version>
-    <springdoc.version>2.6.0</springdoc.version>
+    <springdoc.version>3.0.3</springdoc.version>
     <meilisearch.version>0.14.2</meilisearch.version>
     <aws-sdk.version>2.28.16</aws-sdk.version>
     <argon2.version>2.11</argon2.version>

@@ -23,9 +23,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * <p>Проверяет что Flyway-миграции применяются на чистом Postgres и схема auth содержит все
  * ожидаемые таблицы, колонки и индексы строго по docs/erd.dbml.
  *
- * <p>Намеренно не использует @SpringBootTest: JPA-сущности появятся в TASK-102, а до этого
- * момента Hibernate ddl-auto: validate не может проверить схему. Тест работает через прямые
- * JDBC-запросы к information_schema и pg_catalog.
+ * <p>Намеренно не использует @SpringBootTest: JPA-сущности появятся в TASK-102, а до этого момента
+ * Hibernate ddl-auto: validate не может проверить схему. Тест работает через прямые JDBC-запросы к
+ * information_schema и pg_catalog.
  */
 @Testcontainers
 class AuthMigrationIT {
@@ -45,7 +45,8 @@ class AuthMigrationIT {
         .isThrownBy(
             () ->
                 Flyway.configure()
-                    .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
+                    .dataSource(
+                        POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
                     .locations("classpath:db/migration")
                     .load()
                     .migrate());
@@ -96,16 +97,28 @@ class AuthMigrationIT {
   void auth_refresh_tokens_has_all_required_columns() throws SQLException {
     assertThat(columns("auth", "refresh_tokens"))
         .containsExactlyInAnyOrder(
-            "id", "user_id", "token_hash", "device_info", "expires_at", "revoked_at",
-            "rotated_from", "created_at");
+            "id",
+            "user_id",
+            "token_hash",
+            "device_info",
+            "expires_at",
+            "revoked_at",
+            "rotated_from",
+            "created_at");
   }
 
   @Test
   void auth_user_consents_has_all_required_columns() throws SQLException {
     assertThat(columns("auth", "user_consents"))
         .containsExactlyInAnyOrder(
-            "id", "user_id", "consent_type", "version", "accepted_at", "accepted_ip",
-            "accepted_ua", "revoked_at");
+            "id",
+            "user_id",
+            "consent_type",
+            "version",
+            "accepted_at",
+            "accepted_ip",
+            "accepted_ua",
+            "revoked_at");
   }
 
   // ===== Enum =====
@@ -190,9 +203,10 @@ class AuthMigrationIT {
   // ===== JDBC helpers =====
 
   private boolean tableExists(String schema, String table) throws SQLException {
-    try (var stmt = conn.prepareStatement(
-        "SELECT 1 FROM information_schema.tables"
-            + " WHERE table_schema = ? AND table_name = ?")) {
+    try (var stmt =
+        conn.prepareStatement(
+            "SELECT 1 FROM information_schema.tables"
+                + " WHERE table_schema = ? AND table_name = ?")) {
       stmt.setString(1, schema);
       stmt.setString(2, table);
       try (ResultSet rs = stmt.executeQuery()) {
@@ -203,9 +217,10 @@ class AuthMigrationIT {
 
   private List<String> columns(String schema, String table) throws SQLException {
     var result = new ArrayList<String>();
-    try (var stmt = conn.prepareStatement(
-        "SELECT column_name FROM information_schema.columns"
-            + " WHERE table_schema = ? AND table_name = ?")) {
+    try (var stmt =
+        conn.prepareStatement(
+            "SELECT column_name FROM information_schema.columns"
+                + " WHERE table_schema = ? AND table_name = ?")) {
       stmt.setString(1, schema);
       stmt.setString(2, table);
       try (ResultSet rs = stmt.executeQuery()) {
@@ -219,8 +234,9 @@ class AuthMigrationIT {
 
   private List<String> indexes(String schema, String table) throws SQLException {
     var result = new ArrayList<String>();
-    try (var stmt = conn.prepareStatement(
-        "SELECT indexname FROM pg_indexes WHERE schemaname = ? AND tablename = ?")) {
+    try (var stmt =
+        conn.prepareStatement(
+            "SELECT indexname FROM pg_indexes WHERE schemaname = ? AND tablename = ?")) {
       stmt.setString(1, schema);
       stmt.setString(2, table);
       try (ResultSet rs = stmt.executeQuery()) {

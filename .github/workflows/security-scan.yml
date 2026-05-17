@@ -46,7 +46,7 @@ jobs:
           cache: maven
 
       - name: Cache OWASP DC database
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.m2/repository/org/owasp/dependency-check-data
           key: owasp-dc-${{ runner.os }}-${{ hashFiles('backend/pom.xml') }}

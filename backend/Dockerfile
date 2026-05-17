@@ -4,7 +4,7 @@
 # ==============================================================================
 
 # ===== Stage 1: build =====
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM eclipse-temurin:25-jdk-alpine AS builder
 WORKDIR /workspace
 
 # Кэшируем зависимости отдельным слоем
@@ -19,7 +19,7 @@ RUN ./mvnw -B -ntp -DskipTests package && \
     java -Djarmode=layertools -jar target/truemarket-backend.jar extract --destination target/extracted
 
 # ===== Stage 2: runtime =====
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 
 # Непривилегированный пользователь

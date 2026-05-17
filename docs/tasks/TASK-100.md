@@ -5,8 +5,9 @@ module: common
 priority: critical
 depends_on: []
 estimated_hours: 2
-status: in_progress
+status: completed
 started_at: 2026-05-17
+completed_at: 2026-05-17
 
 scope_note: |
   Изначально (v1) задача покрывала spotless + smoke-тест (локально make ci-local).

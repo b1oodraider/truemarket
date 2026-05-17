@@ -903,10 +903,10 @@ definition_of_done:
 
 | ID | Название | Статус |
 |---|---|---|
-| `TASK-101` | Auth: миграции БД (users, refresh_tokens, user_consents) | 🟡 IN_PROGRESS |
-| `TASK-100` | Фикс lint/test-долга Phase 0 (CI gate'ы) | 🟡 IN_PROGRESS |
-| `TASK-099` | Security-хардинг Docker base-image + runbook NVD_API_KEY | 🟡 IN_PROGRESS |
-| `TASK-098` | Платформенный апгрейд Java 25 + Spring Boot 4 ([ADR-010](docs/adr/ADR-010-platform-upgrade-java25-springboot4.md)) | 🟡 IN_PROGRESS |
+| `TASK-101` | Auth: миграции БД (users, refresh_tokens, user_consents) | 🟢 DONE |
+| `TASK-100` | Фикс lint/test-долга Phase 0 (CI gate'ы) | 🟢 DONE |
+| `TASK-099` | Security-хардинг Docker base-image + runbook NVD_API_KEY | 🟢 DONE |
+| `TASK-098` | Платформенный апгрейд Java 25 + Spring Boot 4 ([ADR-010](docs/adr/ADR-010-platform-upgrade-java25-springboot4.md)) | 🟢 DONE |
 
 **Дополнительный ADR Phase 1:** [ADR-010](docs/adr/ADR-010-platform-upgrade-java25-springboot4.md) — платформенный апгрейд (Accepted; supersedes ADR-001 в части версий, amends ADR-006/007).
 

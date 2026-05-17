@@ -5,8 +5,9 @@ module: common
 priority: high
 depends_on: [TASK-099]
 estimated_hours: 4
-status: in_progress
+status: completed
 started_at: 2026-05-17
+completed_at: 2026-05-17
 
 context: |
   Реализация ADR-010. Product Owner запросил переход на новые стабильные

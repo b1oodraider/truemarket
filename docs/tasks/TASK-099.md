@@ -5,8 +5,9 @@ module: common
 priority: high
 depends_on: []
 estimated_hours: 2
-status: in_progress
+status: completed
 started_at: 2026-05-17
+completed_at: 2026-05-17
 
 residual_resolution: |
   Trivy после apk-хардинга (и даже с Boot 4 в стеке TASK-098) всё ещё флагует

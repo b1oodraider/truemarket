@@ -18,9 +18,10 @@ import ru.truemarket.auth.service.AuthenticationService;
 import ru.truemarket.auth.service.RegistrationService;
 
 /**
- * Аутентификация (TASK-102). Контракт — docs/api/openapi.yaml (single source of truth).
+ * Аутентификация. Контракт — docs/api/openapi.yaml (single source of truth).
  *
- * <p>Phase 1 scope: только регистрация покупателя. /login, /refresh, /logout — TASK-103/104.
+ * <p>Реализовано: register (TASK-102), login + refresh (TASK-103). Отложено: /logout и
+ * персистентная ротация refresh — TASK-104; rate-limit/429 — TASK-107.
  */
 @RestController
 @RequestMapping("/api/v1/auth")

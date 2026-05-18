@@ -10,7 +10,8 @@ import org.springframework.modulith.Modulithic;
  * <p>Архитектурные решения:
  *
  * <ul>
- *   <li>ADR-001 — Java 21 + Spring Boot 3
+ *   <li>ADR-001 — Java + Spring Boot (выбор языка/фреймворка)
+ *   <li>ADR-010 — платформа Java 25 LTS + Spring Boot 4 + Spring Modulith 2
  *   <li>ADR-006 — модульный монолит на Spring Modulith
  * </ul>
  *

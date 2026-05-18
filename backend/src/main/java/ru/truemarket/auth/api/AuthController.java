@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import ru.truemarket.auth.api.dto.LoginRequest;
@@ -15,6 +16,7 @@ import ru.truemarket.auth.api.dto.RefreshRequest;
 import ru.truemarket.auth.api.dto.RegisterRequest;
 import ru.truemarket.auth.api.dto.TokenPair;
 import ru.truemarket.auth.service.AuthenticationService;
+import ru.truemarket.auth.service.RefreshTokenService;
 import ru.truemarket.auth.service.RegistrationService;
 
 /**
@@ -29,11 +31,15 @@ public class AuthController {
 
   private final RegistrationService registrationService;
   private final AuthenticationService authenticationService;
+  private final RefreshTokenService refreshTokenService;
 
   public AuthController(
-      RegistrationService registrationService, AuthenticationService authenticationService) {
+      RegistrationService registrationService,
+      AuthenticationService authenticationService,
+      RefreshTokenService refreshTokenService) {
     this.registrationService = registrationService;
     this.authenticationService = authenticationService;
+    this.refreshTokenService = refreshTokenService;
   }
 
   @PostMapping("/register")
@@ -45,13 +51,20 @@ public class AuthController {
   }
 
   @PostMapping("/login")
-  public TokenPair login(@Valid @RequestBody LoginRequest request) {
-    return authenticationService.login(request.email(), request.password());
+  public TokenPair login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
+    return authenticationService.login(
+        request.email(), request.password(), http.getHeader("User-Agent"));
   }
 
   @PostMapping("/refresh")
-  public TokenPair refresh(@Valid @RequestBody RefreshRequest request) {
-    return authenticationService.refresh(request.refreshToken());
+  public TokenPair refresh(@Valid @RequestBody RefreshRequest request, HttpServletRequest http) {
+    return authenticationService.refresh(request.refreshToken(), http.getHeader("User-Agent"));
+  }
+
+  @PostMapping("/logout")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void logout(@Valid @RequestBody RefreshRequest request) {
+    refreshTokenService.logout(request.refreshToken());
   }
 
   /** Реальный IP за reverse-proxy (server.forward-headers-strategy=framework уже учитывает XFF). */

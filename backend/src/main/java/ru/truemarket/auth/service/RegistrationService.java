@@ -24,16 +24,19 @@ public class RegistrationService {
   private final UserConsentRepository consents;
   private final PasswordEncoder passwordEncoder;
   private final TokenService tokenService;
+  private final RefreshTokenService refreshTokens;
 
   public RegistrationService(
       UserRepository users,
       UserConsentRepository consents,
       PasswordEncoder passwordEncoder,
-      TokenService tokenService) {
+      TokenService tokenService,
+      RefreshTokenService refreshTokens) {
     this.users = users;
     this.consents = consents;
     this.passwordEncoder = passwordEncoder;
     this.tokenService = tokenService;
+    this.refreshTokens = refreshTokens;
   }
 
   @Transactional
@@ -49,6 +52,8 @@ public class RegistrationService {
     User user = users.save(User.newBuyer(request.email(), request.phone(), hash));
     consents.save(UserConsent.pdnProcessing(user.getId(), acceptedIp, acceptedUa));
 
-    return tokenService.issueFor(user);
+    TokenPair pair = tokenService.issueFor(user);
+    refreshTokens.persistIssued(user.getId(), pair.refreshToken(), acceptedUa, null);
+    return pair;
   }
 }

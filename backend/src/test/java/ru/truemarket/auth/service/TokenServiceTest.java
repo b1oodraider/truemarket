@@ -94,6 +94,23 @@ class TokenServiceTest {
   }
 
   @Test
+  void hash_isDeterministicSha256Hex() {
+    String h1 = tokenService.hash("some-token");
+    String h2 = tokenService.hash("some-token");
+    assertThat(h1).isEqualTo(h2).hasSize(64).matches("[0-9a-f]{64}");
+    assertThat(tokenService.hash("other")).isNotEqualTo(h1);
+  }
+
+  @Test
+  void refreshExpiry_matchesTokenExp() {
+    User user = User.newBuyer("a@b.com", null, "$argon2id$h");
+    TokenPair pair = tokenService.issueFor(user);
+
+    Instant exp = tokenService.refreshExpiry(pair.refreshToken());
+    assertThat(exp).isAfter(Instant.now().plus(Duration.ofDays(29)));
+  }
+
+  @Test
   void shortSecret_isRejected() {
     assertThatThrownBy(
             () ->

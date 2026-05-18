@@ -1,7 +1,5 @@
 package ru.truemarket.auth.service;
 
-import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,32 +20,34 @@ public class AuthenticationService {
   private final UserRepository users;
   private final PasswordEncoder passwordEncoder;
   private final TokenService tokenService;
+  private final RefreshTokenService refreshTokens;
 
   public AuthenticationService(
-      UserRepository users, PasswordEncoder passwordEncoder, TokenService tokenService) {
+      UserRepository users,
+      PasswordEncoder passwordEncoder,
+      TokenService tokenService,
+      RefreshTokenService refreshTokens) {
     this.users = users;
     this.passwordEncoder = passwordEncoder;
     this.tokenService = tokenService;
+    this.refreshTokens = refreshTokens;
   }
 
   @Transactional
-  public TokenPair login(String email, String rawPassword) {
+  public TokenPair login(String email, String rawPassword, String deviceInfo) {
     User user =
         users.findByEmailAndDeletedAtIsNull(email).orElseThrow(InvalidCredentialsException::new);
     if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
       throw new InvalidCredentialsException();
     }
     user.touchLastLogin();
-    return tokenService.issueFor(user);
+    TokenPair pair = tokenService.issueFor(user);
+    refreshTokens.persistIssued(user.getId(), pair.refreshToken(), deviceInfo, null);
+    return pair;
   }
 
-  @Transactional(readOnly = true)
-  public TokenPair refresh(String refreshToken) {
-    UUID userId = tokenService.parseRefresh(refreshToken);
-    User user =
-        users
-            .findByIdAndDeletedAtIsNull(userId)
-            .orElseThrow(() -> new InvalidTokenException("user not found or deleted"));
-    return tokenService.issueFor(user);
+  /** Делегирует персистентной ротации с replay-detection (TASK-104). */
+  public TokenPair refresh(String refreshToken, String deviceInfo) {
+    return refreshTokens.rotate(refreshToken, deviceInfo);
   }
 }

@@ -28,6 +28,7 @@ class RegistrationServiceTest {
   @Mock private UserConsentRepository consents;
   @Mock private PasswordEncoder passwordEncoder;
   @Mock private TokenService tokenService;
+  @Mock private RefreshTokenService refreshTokens;
   @InjectMocks private RegistrationService service;
 
   private static RegisterRequest req() {
@@ -48,6 +49,12 @@ class RegistrationServiceTest {
     assertThat(result.tokenType()).isEqualTo("Bearer");
     verify(users).save(any(User.class));
     verify(consents).save(any(UserConsent.class));
+    verify(refreshTokens)
+        .persistIssued(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.eq("ref"),
+            org.mockito.ArgumentMatchers.eq("JUnit-UA"),
+            org.mockito.ArgumentMatchers.isNull());
   }
 
   @Test

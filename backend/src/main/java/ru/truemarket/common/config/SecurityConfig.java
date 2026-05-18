@@ -40,7 +40,8 @@ public class SecurityConfig {
                         HttpMethod.POST,
                         "/api/v1/auth/register",
                         "/api/v1/auth/login",
-                        "/api/v1/auth/refresh")
+                        "/api/v1/auth/refresh",
+                        "/api/v1/auth/logout")
                     .permitAll()
                     // Остальное закрыто. JWT-валидация/RBAC — TASK-106.
                     .anyRequest()

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.truemarket.auth.service.InvalidCredentialsException;
 import ru.truemarket.auth.service.InvalidTokenException;
 import ru.truemarket.auth.service.RegistrationConflictException;
+import ru.truemarket.auth.service.ReplayDetectedException;
 
 /**
  * RFC 7807 (application/problem+json) для auth-эндпоинтов (TASK-102, CLAUDE.md §11 формат ошибок).
@@ -45,7 +46,11 @@ class AuthExceptionHandler {
     return problem(HttpStatus.CONFLICT, "Conflict", "unique constraint violation", "conflict");
   }
 
-  @ExceptionHandler({InvalidCredentialsException.class, InvalidTokenException.class})
+  @ExceptionHandler({
+    InvalidCredentialsException.class,
+    InvalidTokenException.class,
+    ReplayDetectedException.class
+  })
   ProblemDetail onUnauthorized(RuntimeException ex) {
     // Единое сообщение (anti-enumeration): не раскрываем причину 401 (TASK-103).
     return problem(HttpStatus.UNAUTHORIZED, "Unauthorized", "invalid credentials", "unauthorized");

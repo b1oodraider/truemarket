@@ -1,9 +1,12 @@
 package ru.truemarket.auth.service;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.HexFormat;
 import java.util.UUID;
 
 import javax.crypto.SecretKey;
@@ -14,6 +17,7 @@ import ru.truemarket.auth.api.dto.TokenPair;
 import ru.truemarket.auth.config.AuthProperties;
 import ru.truemarket.auth.domain.User;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -63,13 +67,33 @@ public class TokenService {
    * — TASK-104.
    */
   public UUID parseRefresh(String refreshToken) {
+    return UUID.fromString(verifiedRefreshClaims(refreshToken).getSubject());
+  }
+
+  /** Момент истечения refresh-токена (для персистенции, TASK-104). */
+  public Instant refreshExpiry(String refreshToken) {
+    return verifiedRefreshClaims(refreshToken).getExpiration().toInstant();
+  }
+
+  /** SHA-256 hex от токена — хранится вместо самого токена (§13.5, TASK-104). */
+  public String hash(String token) {
     try {
-      var claims =
+      byte[] digest =
+          MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));
+      return HexFormat.of().formatHex(digest);
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 unavailable", e); // не достижимо на стандартной JVM
+    }
+  }
+
+  private Claims verifiedRefreshClaims(String refreshToken) {
+    try {
+      Claims claims =
           Jwts.parser().verifyWith(key).build().parseSignedClaims(refreshToken).getPayload();
       if (!TYPE_REFRESH.equals(claims.get(CLAIM_TYPE, String.class))) {
         throw new InvalidTokenException("not a refresh token");
       }
-      return UUID.fromString(claims.getSubject());
+      return claims;
     } catch (InvalidTokenException e) {
       throw e;
     } catch (JwtException | IllegalArgumentException e) {

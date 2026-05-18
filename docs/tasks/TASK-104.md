@@ -5,8 +5,9 @@ module: auth
 priority: critical
 depends_on: [TASK-103]
 estimated_hours: 8
-status: in_progress
+status: completed
 started_at: 2026-05-18
+completed_at: 2026-05-18
 
 context: |
   TASK-103 выпускал refresh stateless (только подпись/exp). Это времянка:

@@ -9,10 +9,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Базовый skeleton Spring Security: stateless, всё закрыто кроме actuator/health и swagger.
+ * Базовый Spring Security: stateless; открыты actuator/health, swagger и публичные auth-эндпоинты
+ * (register/login/refresh, openapi security: []), остальное denyAll.
  *
- * <p><b>Phase 0 — заглушка.</b> JWT-фильтр, RBAC и rate-limiting по эндпоинтам реализуются в Фазе 1
- * (TASK-101 и далее).
+ * <p>JWT-фильтр валидации и RBAC по эндпоинтам — TASK-106 (там же — модульная подача правил
+ * безопасности, чтобы common не знал путей каждого модуля). rate-limit — TASK-107.
  */
 @Configuration
 public class SecurityConfig {

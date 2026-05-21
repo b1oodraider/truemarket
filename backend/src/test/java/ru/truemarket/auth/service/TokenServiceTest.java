@@ -95,6 +95,33 @@ class TokenServiceTest {
   }
 
   @Test
+  void parseAccess_validAccess_returnsIdAndRole() {
+    User user = User.newBuyer("a@b.com", null, "$argon2id$h");
+    TokenPair pair = tokenService.issueFor(user);
+
+    var principal = tokenService.parseAccess(pair.accessToken());
+
+    assertThat(principal.id()).isEqualTo(user.getId());
+    assertThat(principal.role()).isEqualTo(user.getRole());
+    assertThat(principal.authority()).isEqualTo("ROLE_BUYER");
+  }
+
+  @Test
+  void parseAccess_refreshToken_rejected() {
+    User user = User.newBuyer("a@b.com", null, "$argon2id$h");
+    TokenPair pair = tokenService.issueFor(user);
+
+    assertThatThrownBy(() -> tokenService.parseAccess(pair.refreshToken()))
+        .isInstanceOf(InvalidTokenException.class);
+  }
+
+  @Test
+  void parseAccess_garbage_rejected() {
+    assertThatThrownBy(() -> tokenService.parseAccess("not.a.jwt"))
+        .isInstanceOf(InvalidTokenException.class);
+  }
+
+  @Test
   void hash_isDeterministicSha256Hex() {
     String h1 = tokenService.hash("some-token");
     String h2 = tokenService.hash("some-token");

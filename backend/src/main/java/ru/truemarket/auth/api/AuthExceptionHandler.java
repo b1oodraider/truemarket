@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import ru.truemarket.auth.service.IncorrectPasswordException;
 import ru.truemarket.auth.service.InvalidCredentialsException;
 import ru.truemarket.auth.service.InvalidTokenException;
 import ru.truemarket.auth.service.PasswordBreachedException;
@@ -46,6 +47,12 @@ class AuthExceptionHandler {
   ProblemDetail onPasswordBreached(PasswordBreachedException ex) {
     // Не анти-энумерация: причина в свойстве пароля, клиент должен выбрать другой.
     return problem(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), "breached-password");
+  }
+
+  @ExceptionHandler(IncorrectPasswordException.class)
+  ProblemDetail onIncorrectPassword(IncorrectPasswordException ex) {
+    // Пользователь аутентифицирован токеном — не анти-энумерация; сообщение прямое.
+    return problem(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), "incorrect-password");
   }
 
   @ExceptionHandler(DataIntegrityViolationException.class)

@@ -58,12 +58,14 @@
 | [TASK-102](./TASK-102.md) | Auth: регистрация покупателя (argon2id + JWT-выпуск) | 🟢 DONE |
 | [TASK-103](./TASK-103.md) | Auth: `/login` + `/refresh` (stateless, переиспользует TokenService из 102) | 🟢 DONE |
 | [TASK-104](./TASK-104.md) | Auth: персистентная ротация refresh + replay-detection + /logout | 🟢 DONE |
-| TASK-105 | Auth: breach-check (haveibeenpwned) + смена пароля + политика | 🔵 TODO |
-| TASK-106 | Auth: middleware валидации JWT, RBAC | 🔵 TODO |
+| [TASK-105](./TASK-105.md) | Auth: breach-check (haveibeenpwned) при регистрации + минимальная политика | 🟢 DONE |
+| TASK-106 | Auth: middleware валидации JWT, RBAC (+ смена пароля /change-password, перенесена из 105) | 🔵 TODO |
 | TASK-107 | Auth: rate-limit/429 на `/login` + `/register` | 🔵 TODO |
 
 > Пере-скоуп TASK-103/104/105/107 одобрен PO (2026-05-18): минимум argon2id+JWT
 > уже сделан в TASK-102 под контракт openapi; см. TASK-102.md `context`.
+> TASK-105 (2026-05-21): смена пароля перенесена в TASK-106 (требует Bearer-аутентификацию
+> из JWT-фильтра 106); в 105 — breach-check (HIBP, fail-open) при регистрации + длина ≥12.
 | TASK-108 | Catalog: миграции (categories, products, product_images) | 🔵 TODO |
 | TASK-109 | Catalog: CRUD категорий (admin) | 🔵 TODO |
 | TASK-110 | Catalog: CRUD товаров (seller) | 🔵 TODO |

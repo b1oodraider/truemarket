@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import ru.truemarket.auth.service.InvalidCredentialsException;
 import ru.truemarket.auth.service.InvalidTokenException;
+import ru.truemarket.auth.service.PasswordBreachedException;
 import ru.truemarket.auth.service.RegistrationConflictException;
 import ru.truemarket.auth.service.ReplayDetectedException;
 
@@ -39,6 +40,12 @@ class AuthExceptionHandler {
   @ExceptionHandler(RegistrationConflictException.class)
   ProblemDetail onConflict(RegistrationConflictException ex) {
     return problem(HttpStatus.CONFLICT, "Conflict", ex.getMessage(), "conflict");
+  }
+
+  @ExceptionHandler(PasswordBreachedException.class)
+  ProblemDetail onPasswordBreached(PasswordBreachedException ex) {
+    // Не анти-энумерация: причина в свойстве пароля, клиент должен выбрать другой.
+    return problem(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), "breached-password");
   }
 
   @ExceptionHandler(DataIntegrityViolationException.class)

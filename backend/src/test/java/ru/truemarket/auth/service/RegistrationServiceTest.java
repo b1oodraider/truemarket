@@ -27,6 +27,7 @@ class RegistrationServiceTest {
   @Mock private UserRepository users;
   @Mock private UserConsentRepository consents;
   @Mock private PasswordEncoder passwordEncoder;
+  @Mock private PwnedPasswordChecker pwnedPasswordChecker;
   @Mock private TokenService tokenService;
   @Mock private RefreshTokenService refreshTokens;
   @InjectMocks private RegistrationService service;
@@ -80,6 +81,20 @@ class RegistrationServiceTest {
         .hasMessageContaining("phone");
 
     verify(users, never()).save(any());
+  }
+
+  @Test
+  void breachedPassword_throws_andDoesNotPersistOrHash() {
+    when(users.existsByEmail(any())).thenReturn(false);
+    when(users.existsByPhone(any())).thenReturn(false);
+    when(pwnedPasswordChecker.isCompromised("verylongpassword12")).thenReturn(true);
+
+    assertThatThrownBy(() -> service.register(req(), "1.2.3.4", "ua"))
+        .isInstanceOf(PasswordBreachedException.class);
+
+    verify(users, never()).save(any());
+    verify(consents, never()).save(any());
+    verify(passwordEncoder, never()).encode(any());
   }
 
   @Test

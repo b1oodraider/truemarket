@@ -29,7 +29,8 @@ class TokenServiceTest {
           new AuthProperties(
               new AuthProperties.Jwt(
                   SECRET, Duration.ofMinutes(15), Duration.ofDays(30), "truemarket"),
-              new AuthProperties.Password(new AuthProperties.Password.Argon2(2, 16384, 1))));
+              new AuthProperties.Password(
+                  new AuthProperties.Password.Argon2(2, 16384, 1), false, null)));
 
   @Test
   void issuedAccessToken_isParseable_withCorrectClaims() {
@@ -119,7 +120,7 @@ class TokenServiceTest {
                         new AuthProperties.Jwt(
                             "too-short", Duration.ofMinutes(15), Duration.ofDays(30), "tm"),
                         new AuthProperties.Password(
-                            new AuthProperties.Password.Argon2(2, 16384, 1)))))
+                            new AuthProperties.Password.Argon2(2, 16384, 1), false, null))))
         .isInstanceOf(IllegalStateException.class);
   }
 }

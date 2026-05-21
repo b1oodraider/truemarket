@@ -13,7 +13,8 @@ class Argon2idPasswordEncoderTest {
       new Argon2idPasswordEncoder(
           new AuthProperties(
               new AuthProperties.Jwt(null, null, null, null),
-              new AuthProperties.Password(new AuthProperties.Password.Argon2(2, 16384, 1))));
+              new AuthProperties.Password(
+                  new AuthProperties.Password.Argon2(2, 16384, 1), false, null)));
 
   @Test
   void encode_thenMatches_true() {

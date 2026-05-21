@@ -5,8 +5,10 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -15,6 +17,7 @@ import ru.truemarket.auth.service.IncorrectPasswordException;
 import ru.truemarket.auth.service.InvalidCredentialsException;
 import ru.truemarket.auth.service.InvalidTokenException;
 import ru.truemarket.auth.service.PasswordBreachedException;
+import ru.truemarket.auth.service.RateLimitExceededException;
 import ru.truemarket.auth.service.RegistrationConflictException;
 import ru.truemarket.auth.service.ReplayDetectedException;
 
@@ -58,6 +61,19 @@ class AuthExceptionHandler {
   @ExceptionHandler(DataIntegrityViolationException.class)
   ProblemDetail onDataIntegrity(DataIntegrityViolationException ex) {
     return problem(HttpStatus.CONFLICT, "Conflict", "unique constraint violation", "conflict");
+  }
+
+  @ExceptionHandler(RateLimitExceededException.class)
+  ResponseEntity<ProblemDetail> onRateLimit(RateLimitExceededException ex) {
+    ProblemDetail pd =
+        problem(
+            HttpStatus.TOO_MANY_REQUESTS,
+            "Too Many Requests",
+            "rate limit exceeded",
+            "rate-limited");
+    return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+        .header(HttpHeaders.RETRY_AFTER, Long.toString(ex.getRetryAfterSeconds()))
+        .body(pd);
   }
 
   @ExceptionHandler({

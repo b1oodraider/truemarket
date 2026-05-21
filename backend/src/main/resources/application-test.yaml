@@ -15,6 +15,8 @@ truemarket:
       secret: test-secret-for-tests-only-do-not-use-anywhere-else-just-for-junit-tests
     password:
       pwned-check-enabled: false
+  rate-limit:
+    enabled: false   # IT не требуют Redis; rate-limit проверяется в AuthRateLimitIT (enabled=true)
 
 logging:
   level:

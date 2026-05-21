@@ -135,6 +135,7 @@ truemarket:
         base-url: ${PWNED_API_URL:https://api.pwnedpasswords.com}
         timeout: 2s
   rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}              # TASK-107; распределённый (Redis/bucket4j)
     auth:
       per-ip-per-minute: 5
       per-login-per-minute: 5

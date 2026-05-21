@@ -6,9 +6,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
-/** Включает биндинг {@link AuthProperties} (TASK-102) и клиент HIBP (TASK-105). */
+/**
+ * Включает биндинг {@link AuthProperties} (TASK-102), {@link RateLimitProperties} (TASK-107) и
+ * клиент HIBP (TASK-105).
+ */
 @Configuration
-@EnableConfigurationProperties(AuthProperties.class)
+@EnableConfigurationProperties({AuthProperties.class, RateLimitProperties.class})
 public class AuthConfig {
 
   /** RestClient к haveibeenpwned с baseUrl и таймаутами connect/read (TASK-105). */

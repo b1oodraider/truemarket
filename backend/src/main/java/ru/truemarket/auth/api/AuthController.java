@@ -17,12 +17,12 @@ import ru.truemarket.auth.api.dto.LoginRequest;
 import ru.truemarket.auth.api.dto.RefreshRequest;
 import ru.truemarket.auth.api.dto.RegisterRequest;
 import ru.truemarket.auth.api.dto.TokenPair;
-import ru.truemarket.auth.security.AuthenticatedUser;
 import ru.truemarket.auth.security.RateLimitGuard;
 import ru.truemarket.auth.service.AuthenticationService;
 import ru.truemarket.auth.service.PasswordChangeService;
 import ru.truemarket.auth.service.RefreshTokenService;
 import ru.truemarket.auth.service.RegistrationService;
+import ru.truemarket.common.security.AuthenticatedUser;
 
 /**
  * Аутентификация. Контракт — docs/api/openapi.yaml (single source of truth).

@@ -1,4 +1,4 @@
-package ru.truemarket.auth.security;
+package ru.truemarket.common.security;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -10,7 +10,8 @@ import org.springframework.http.MediaType;
 
 /**
  * Пишет RFC 7807 (application/problem+json) ответ из security-фильтра, где
- * {@code @RestControllerAdvice} не работает (исключение возникает до контроллера), TASK-106.
+ * {@code @RestControllerAdvice} не работает (исключение возникает до контроллера), shared,
+ * TASK-096.
  *
  * <p>Поля — фиксированные ASCII-литералы (без пользовательского ввода), поэтому ручная сборка JSON
  * безопасна от инъекций и не зависит от версии Jackson.

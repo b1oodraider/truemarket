@@ -10,6 +10,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import ru.truemarket.common.security.JwtAuthenticationFilter;
+import ru.truemarket.common.security.RestAccessDeniedHandler;
+import ru.truemarket.common.security.RestAuthenticationEntryPoint;
+
 /**
  * SecurityFilterChain модуля auth (модульная security, TASK-106, закрывает backlog TASK-095).
  *

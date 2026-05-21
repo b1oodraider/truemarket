@@ -102,7 +102,7 @@ class TokenServiceTest {
     var principal = tokenService.parseAccess(pair.accessToken());
 
     assertThat(principal.id()).isEqualTo(user.getId());
-    assertThat(principal.role()).isEqualTo(user.getRole());
+    assertThat(principal.role()).isEqualTo(user.getRole().name());
     assertThat(principal.authority()).isEqualTo("ROLE_BUYER");
   }
 

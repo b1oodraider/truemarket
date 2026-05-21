@@ -20,7 +20,7 @@ import org.springframework.modulith.Modulithic;
  * ModularityTest}.
  */
 @SpringBootApplication
-@Modulithic(systemName = "TrueMarket")
+@Modulithic(systemName = "TrueMarket", sharedModules = "common")
 public class TrueMarketApplication {
 
   public static void main(String[] args) {

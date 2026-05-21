@@ -59,7 +59,7 @@
 | [TASK-103](./TASK-103.md) | Auth: `/login` + `/refresh` (stateless, переиспользует TokenService из 102) | 🟢 DONE |
 | [TASK-104](./TASK-104.md) | Auth: персистентная ротация refresh + replay-detection + /logout | 🟢 DONE |
 | [TASK-105](./TASK-105.md) | Auth: breach-check (haveibeenpwned) при регистрации + минимальная политика | 🟢 DONE |
-| TASK-106 | Auth: middleware валидации JWT, RBAC (+ смена пароля /change-password, перенесена из 105) | 🔵 TODO |
+| [TASK-106](./TASK-106.md) | Auth: JWT-фильтр валидации access + RBAC + модульная security + /change-password | 🟢 DONE |
 | TASK-107 | Auth: rate-limit/429 на `/login` + `/register` | 🔵 TODO |
 
 > Пере-скоуп TASK-103/104/105/107 одобрен PO (2026-05-18): минимум argon2id+JWT
@@ -104,4 +104,4 @@
 | TASK-097 | Security-scan долг Phase 5: (а) Trivy — остаточные fixable CRITICAL/HIGH CVE в base-image `eclipse-temurin:25-jre-alpine`; (б) OWASP — fast-fail на стеке Boot 4 (генерация SARIF/конфиг плагина после ADR-010) | 🔵 BACKLOG (Phase 5) | Решение PO (1.B): принять как non-blocking (`security-scan.yml` не блокирует PR by design). NVD_API_KEY установлен — 30-мин таймаут устранён (rerun ~1мин); остаточный OWASP fast-fail и Trivy CVE — в Phase 5: pin digest/distroless, разбор OWASP-плагина на Boot 4, обоснованные suppressions с тикетами. Гейты НЕ ослабляются. |
 | — | OWASP `NVD_API_KEY` секрет | 🟢 DONE | Установлен владельцем; таймаут устранён (см. [runbook](../runbooks/security-scan-nvd-api-key.md)). |
 | TASK-096 | Извлечь shared web-инфраструктуру в `common`: RFC7807 ProblemDetail-фабрика (CLAUDE.md §11, нужна всем модулям) + XFF-aware ClientIp-резолвер | 🔵 BACKLOG | Сейчас в auth (1 потребитель) — экстракция была бы премат-абстракцией + перестройка модулей (нужен shared/open Modulith-модуль). Делать при 2-м потребителе (Rule of Three): тогда — `common.web`, `@Modulithic(sharedModules="common")`. |
-| TASK-095 | Модульная подача Spring Security правил | 🔵 BACKLOG (TASK-106) | Сейчас `common.SecurityConfig` хардкодит auth-пути — при росте модулей станет god-config. Перепроектировать в TASK-106 (JWT-фильтр/RBAC) — каждый модуль вносит свои правила. |
+| TASK-095 | Модульная подача Spring Security правил | 🟢 DONE (в TASK-106) | Реализовано per-module `SecurityFilterChain`: `auth.security.AuthSecurityConfig` (matcher `/api/v1/auth/**`, @Order(1)) + `common` catch-all (@Order MAX). common больше не хардкодит пути auth; security «едет» с модулем при split. |

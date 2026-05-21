@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import ru.truemarket.auth.api.dto.TokenPair;
 import ru.truemarket.auth.config.AuthProperties;
 import ru.truemarket.auth.domain.User;
+import ru.truemarket.auth.domain.UserRole;
+import ru.truemarket.auth.security.AuthenticatedUser;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -70,6 +72,17 @@ public class TokenService {
     return UUID.fromString(verifiedRefreshClaims(refreshToken).getSubject());
   }
 
+  /**
+   * Валидирует access-токен (подпись, exp, claim typ=access) и возвращает principal (id + роль) для
+   * {@code SecurityContext} (TASK-106). Любая невалидность → {@link InvalidTokenException}.
+   */
+  public AuthenticatedUser parseAccess(String accessToken) {
+    Claims claims = verifiedClaims(accessToken, TYPE_ACCESS);
+    return new AuthenticatedUser(
+        UUID.fromString(claims.getSubject()),
+        UserRole.valueOf(claims.get(CLAIM_ROLE, String.class)));
+  }
+
   /** Момент истечения refresh-токена (для персистенции, TASK-104). */
   public Instant refreshExpiry(String refreshToken) {
     return verifiedRefreshClaims(refreshToken).getExpiration().toInstant();
@@ -87,17 +100,21 @@ public class TokenService {
   }
 
   private Claims verifiedRefreshClaims(String refreshToken) {
+    return verifiedClaims(refreshToken, TYPE_REFRESH);
+  }
+
+  /** Проверка подписи/exp + соответствие claim typ ожидаемому типу токена. */
+  private Claims verifiedClaims(String token, String expectedType) {
     try {
-      Claims claims =
-          Jwts.parser().verifyWith(key).build().parseSignedClaims(refreshToken).getPayload();
-      if (!TYPE_REFRESH.equals(claims.get(CLAIM_TYPE, String.class))) {
-        throw new InvalidTokenException("not a refresh token");
+      Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+      if (!expectedType.equals(claims.get(CLAIM_TYPE, String.class))) {
+        throw new InvalidTokenException("unexpected token type");
       }
       return claims;
     } catch (InvalidTokenException e) {
       throw e;
     } catch (JwtException | IllegalArgumentException e) {
-      throw new InvalidTokenException("invalid refresh token");
+      throw new InvalidTokenException("invalid token");
     }
   }
 

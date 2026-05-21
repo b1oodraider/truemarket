@@ -67,6 +67,10 @@ paths:
     post:
       tags: [auth]
       summary: Регистрация покупателя
+      description: >-
+        Пароль проверяется по базе утечек haveibeenpwned (CLAUDE.md §13.1);
+        скомпрометированный пароль → 400. При недоступности HIBP проверка
+        пропускается (fail-open).
       security: []
       requestBody:
         required: true

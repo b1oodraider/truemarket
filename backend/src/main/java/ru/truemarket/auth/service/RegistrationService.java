@@ -15,7 +15,8 @@ import ru.truemarket.auth.repository.UserRepository;
  *
  * <p>Атомарно: создаётся {@link User} (role=buyer, argon2id-хеш) + {@link UserConsent} на обработку
  * ПДн (152-ФЗ) с IP/UA. Конфликт уникальности → {@link RegistrationConflictException} (409).
- * Формат-валидация (email, длина пароля, accept_pdn_consent) — Bean Validation на DTO (400).
+ * Формат-валидация (email, длина пароля, accept_pdn_consent) — Bean Validation на DTO (400). Пароль
+ * из известных утечек → {@link PasswordBreachedException} (400, haveibeenpwned, TASK-105).
  */
 @Service
 public class RegistrationService {
@@ -23,6 +24,7 @@ public class RegistrationService {
   private final UserRepository users;
   private final UserConsentRepository consents;
   private final PasswordEncoder passwordEncoder;
+  private final PwnedPasswordChecker pwnedPasswordChecker;
   private final TokenService tokenService;
   private final RefreshTokenService refreshTokens;
 
@@ -30,11 +32,13 @@ public class RegistrationService {
       UserRepository users,
       UserConsentRepository consents,
       PasswordEncoder passwordEncoder,
+      PwnedPasswordChecker pwnedPasswordChecker,
       TokenService tokenService,
       RefreshTokenService refreshTokens) {
     this.users = users;
     this.consents = consents;
     this.passwordEncoder = passwordEncoder;
+    this.pwnedPasswordChecker = pwnedPasswordChecker;
     this.tokenService = tokenService;
     this.refreshTokens = refreshTokens;
   }
@@ -46,6 +50,9 @@ public class RegistrationService {
     }
     if (request.phone() != null && users.existsByPhone(request.phone())) {
       throw new RegistrationConflictException("phone already registered");
+    }
+    if (pwnedPasswordChecker.isCompromised(request.password())) {
+      throw new PasswordBreachedException();
     }
 
     String hash = passwordEncoder.encode(request.password());

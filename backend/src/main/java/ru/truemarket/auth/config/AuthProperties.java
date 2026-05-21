@@ -17,8 +17,11 @@ public record AuthProperties(Jwt jwt, Password password) {
   public record Jwt(
       String secret, Duration accessTokenTtl, Duration refreshTokenTtl, String issuer) {}
 
-  /** Параметры argon2id (CLAUDE.md §13.1). */
-  public record Password(Argon2 argon2) {
+  /** Политика паролей: argon2id + breach-check haveibeenpwned (CLAUDE.md §13.1). */
+  public record Password(Argon2 argon2, boolean pwnedCheckEnabled, Hibp hibp) {
     public record Argon2(int iterations, int memoryKb, int parallelism) {}
+
+    /** Pwned Passwords range API: базовый URL и таймаут на запрос. */
+    public record Hibp(String baseUrl, Duration timeout) {}
   }
 }

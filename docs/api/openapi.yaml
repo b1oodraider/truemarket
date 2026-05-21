@@ -127,6 +127,31 @@ paths:
       responses:
         '204': { description: No Content }
 
+  /auth/change-password:
+    post:
+      tags: [auth]
+      summary: Смена пароля (аутентифицированный пользователь)
+      description: >-
+        Требует Bearer access-токен. Подтверждает текущий пароль, проверяет новый по
+        базе утечек (haveibeenpwned) и длине ≥12, затем отзывает все refresh-токены
+        пользователя (logout everywhere).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password: { type: string }
+                new_password: { type: string, minLength: 12, description: 'Минимум 12 символов (CLAUDE.md 13.1)' }
+      responses:
+        '204': { description: No Content }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   # ===== USERS ================================================================
   /users/me:
     get:

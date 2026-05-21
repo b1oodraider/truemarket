@@ -85,6 +85,11 @@ public class User {
     this.lastLoginAt = Instant.now();
   }
 
+  /** Сменить пароль (TASK-106): новый argon2id-хеш. {@code updatedAt} — @UpdateTimestamp. */
+  public void changePassword(String newPasswordHash) {
+    this.passwordHash = newPasswordHash;
+  }
+
   public UUID getId() {
     return id;
   }

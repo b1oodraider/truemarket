@@ -66,7 +66,7 @@
 > уже сделан в TASK-102 под контракт openapi; см. TASK-102.md `context`.
 > TASK-105 (2026-05-21): смена пароля перенесена в TASK-106 (требует Bearer-аутентификацию
 > из JWT-фильтра 106); в 105 — breach-check (HIBP, fail-open) при регистрации + длина ≥12.
-| TASK-108 | Catalog: миграции (categories, products, product_images) | 🔵 TODO |
+| [TASK-108](./TASK-108.md) | Catalog: миграции (categories, products, product_images) | 🟢 DONE |
 | TASK-109 | Catalog: CRUD категорий (admin) | 🔵 TODO |
 | TASK-110 | Catalog: CRUD товаров (seller) | 🔵 TODO |
 | TASK-111 | Catalog: загрузка фото в S3/MinIO | 🔵 TODO |

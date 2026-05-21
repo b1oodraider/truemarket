@@ -1,4 +1,4 @@
-package ru.truemarket.auth.security;
+package ru.truemarket.common.security;
 
 import java.io.IOException;
 
@@ -10,9 +10,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
-/** 403 для аутентифицированного пользователя без нужной роли (RBAC, RFC7807, TASK-106). */
+/** 403 для аутентифицированного пользователя без нужной роли (RBAC, RFC7807, shared, TASK-096). */
 @Component
-class RestAccessDeniedHandler implements AccessDeniedHandler {
+public class RestAccessDeniedHandler implements AccessDeniedHandler {
 
   @Override
   public void handle(

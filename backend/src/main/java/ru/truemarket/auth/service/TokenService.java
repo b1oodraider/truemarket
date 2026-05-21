@@ -16,8 +16,7 @@ import org.springframework.stereotype.Service;
 import ru.truemarket.auth.api.dto.TokenPair;
 import ru.truemarket.auth.config.AuthProperties;
 import ru.truemarket.auth.domain.User;
-import ru.truemarket.auth.domain.UserRole;
-import ru.truemarket.auth.security.AuthenticatedUser;
+import ru.truemarket.common.security.AuthenticatedUser;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -79,8 +78,7 @@ public class TokenService {
   public AuthenticatedUser parseAccess(String accessToken) {
     Claims claims = verifiedClaims(accessToken, TYPE_ACCESS);
     return new AuthenticatedUser(
-        UUID.fromString(claims.getSubject()),
-        UserRole.valueOf(claims.get(CLAIM_ROLE, String.class)));
+        UUID.fromString(claims.getSubject()), claims.get(CLAIM_ROLE, String.class));
   }
 
   /** Момент истечения refresh-токена (для персистенции, TASK-104). */

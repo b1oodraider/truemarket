@@ -1,9 +1,10 @@
-package ru.truemarket.auth.security;
+package ru.truemarket.common.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import jakarta.servlet.FilterChain;
@@ -18,19 +19,15 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import ru.truemarket.auth.domain.UserRole;
-import ru.truemarket.auth.service.InvalidTokenException;
-import ru.truemarket.auth.service.TokenService;
-
-/** Unit-тесты JWT-фильтра аутентификации (TASK-106). */
+/** Unit-тесты shared JWT-фильтра (TASK-096). */
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
 
-  @Mock private TokenService tokenService;
+  @Mock private AccessTokenAuthenticator authenticator;
   @Mock private FilterChain chain;
 
   private JwtAuthenticationFilter filter() {
-    return new JwtAuthenticationFilter(tokenService);
+    return new JwtAuthenticationFilter(authenticator);
   }
 
   @AfterEach
@@ -40,8 +37,8 @@ class JwtAuthenticationFilterTest {
 
   @Test
   void validBearer_populatesSecurityContext_andContinues() throws Exception {
-    var principal = new AuthenticatedUser(UUID.randomUUID(), UserRole.buyer);
-    when(tokenService.parseAccess("good")).thenReturn(principal);
+    var principal = new AuthenticatedUser(UUID.randomUUID(), "buyer");
+    when(authenticator.authenticate("good")).thenReturn(Optional.of(principal));
     var request = new MockHttpServletRequest();
     request.addHeader("Authorization", "Bearer good");
     var response = new MockHttpServletResponse();
@@ -57,7 +54,7 @@ class JwtAuthenticationFilterTest {
 
   @Test
   void invalidToken_clearsContext_butContinues() throws Exception {
-    when(tokenService.parseAccess("bad")).thenThrow(new InvalidTokenException("invalid token"));
+    when(authenticator.authenticate("bad")).thenReturn(Optional.empty());
     var request = new MockHttpServletRequest();
     request.addHeader("Authorization", "Bearer bad");
     var response = new MockHttpServletResponse();

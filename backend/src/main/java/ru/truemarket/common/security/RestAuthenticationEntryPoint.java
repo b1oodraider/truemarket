@@ -1,4 +1,4 @@
-package ru.truemarket.auth.security;
+package ru.truemarket.common.security;
 
 import java.io.IOException;
 
@@ -10,9 +10,11 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
-/** 401 для запросов без валидного access-токена к защищённому эндпоинту (RFC7807, TASK-106). */
+/**
+ * 401 для запросов без валидного access-токена к защищённому эндпоинту (RFC7807, shared, TASK-096).
+ */
 @Component
-class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
+public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
   @Override
   public void commence(

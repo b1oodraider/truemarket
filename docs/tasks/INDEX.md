@@ -60,7 +60,7 @@
 | [TASK-104](./TASK-104.md) | Auth: персистентная ротация refresh + replay-detection + /logout | 🟢 DONE |
 | [TASK-105](./TASK-105.md) | Auth: breach-check (haveibeenpwned) при регистрации + минимальная политика | 🟢 DONE |
 | [TASK-106](./TASK-106.md) | Auth: JWT-фильтр валидации access + RBAC + модульная security + /change-password | 🟢 DONE |
-| TASK-107 | Auth: rate-limit/429 на `/login` + `/register` | 🔵 TODO |
+| [TASK-107](./TASK-107.md) | Auth: rate-limit/429 на `/login` + `/register` (Redis/bucket4j, распределённый) | 🟢 DONE |
 
 > Пере-скоуп TASK-103/104/105/107 одобрен PO (2026-05-18): минимум argon2id+JWT
 > уже сделан в TASK-102 под контракт openapi; см. TASK-102.md `context`.

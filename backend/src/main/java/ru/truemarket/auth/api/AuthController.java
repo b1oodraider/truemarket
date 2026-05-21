@@ -18,6 +18,7 @@ import ru.truemarket.auth.api.dto.RefreshRequest;
 import ru.truemarket.auth.api.dto.RegisterRequest;
 import ru.truemarket.auth.api.dto.TokenPair;
 import ru.truemarket.auth.security.AuthenticatedUser;
+import ru.truemarket.auth.security.RateLimitGuard;
 import ru.truemarket.auth.service.AuthenticationService;
 import ru.truemarket.auth.service.PasswordChangeService;
 import ru.truemarket.auth.service.RefreshTokenService;
@@ -37,28 +38,33 @@ public class AuthController {
   private final AuthenticationService authenticationService;
   private final RefreshTokenService refreshTokenService;
   private final PasswordChangeService passwordChangeService;
+  private final RateLimitGuard rateLimitGuard;
 
   public AuthController(
       RegistrationService registrationService,
       AuthenticationService authenticationService,
       RefreshTokenService refreshTokenService,
-      PasswordChangeService passwordChangeService) {
+      PasswordChangeService passwordChangeService,
+      RateLimitGuard rateLimitGuard) {
     this.registrationService = registrationService;
     this.authenticationService = authenticationService;
     this.refreshTokenService = refreshTokenService;
     this.passwordChangeService = passwordChangeService;
+    this.rateLimitGuard = rateLimitGuard;
   }
 
   @PostMapping("/register")
   public ResponseEntity<TokenPair> register(
       @Valid @RequestBody RegisterRequest request, HttpServletRequest http) {
-    TokenPair tokens =
-        registrationService.register(request, clientIp(http), http.getHeader("User-Agent"));
+    String ip = clientIp(http);
+    rateLimitGuard.checkRegister(ip);
+    TokenPair tokens = registrationService.register(request, ip, http.getHeader("User-Agent"));
     return ResponseEntity.status(HttpStatus.CREATED).body(tokens);
   }
 
   @PostMapping("/login")
   public TokenPair login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
+    rateLimitGuard.checkLogin(clientIp(http), request.email());
     return authenticationService.login(
         request.email(), request.password(), http.getHeader("User-Agent"));
   }

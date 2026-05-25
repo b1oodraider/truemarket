@@ -43,7 +43,7 @@
     <bucket4j.version>8.19.0</bucket4j.version>
     <springdoc.version>3.0.3</springdoc.version>
     <meilisearch.version>0.20.1</meilisearch.version>
-    <aws-sdk.version>2.44.10</aws-sdk.version>
+    <aws-sdk.version>2.44.12</aws-sdk.version>
     <argon2.version>2.12</argon2.version>
     <testcontainers.version>2.0.5</testcontainers.version>
 
